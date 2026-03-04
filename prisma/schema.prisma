@@ -1,0 +1,380 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== 用户相关 ====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  avatar        String?
+  role          SystemRole @default(DEVELOPER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  projectMembers    ProjectMember[]
+  createdProjects   Project[]        @relation("ProjectCreator")
+  createdWorkItems  WorkItem[]       @relation("WorkItemCreator")
+  devWorkItems      WorkItem[]       @relation("DevOwner")
+  testWorkItems     WorkItem[]       @relation("TestOwner")
+  verifyWorkItems   WorkItem[]       @relation("VerifyOwner")
+  comments          Comment[]
+  follows           Follow[]
+  messages          Message[]
+  progressLogs      ProgressLog[]
+  pokesSent         PokeRecord[]     @relation("Poker")
+  pokesReceived     PokeRecord[]     @relation("Poked")
+  activityLogs      ActivityLog[]
+  createdDependencies WorkItemDependency[] @relation("DependencyCreator")
+
+  @@map("users")
+}
+
+enum SystemRole {
+  ADMIN           // 系统管理员
+  PROJECT_MANAGER // 项目经理
+  DEVELOPER       // 开发人员
+  TESTER          // 测试人员
+  PRODUCT         // 产品人员
+}
+
+// ==================== 项目相关 ====================
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  code        String        @unique
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  creatorId   String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // 关联
+  creator     User            @relation("ProjectCreator", fields: [creatorId], references: [id])
+  members     ProjectMember[]
+  sprints     Sprint[]
+  workItems   WorkItem[]
+  statusConfigs StatusConfig[]
+  phaseConfigs  PhaseConfig[]
+
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  ACTIVE    // 进行中
+  ARCHIVED  // 已归档
+}
+
+model ProjectMember {
+  id        String      @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectRole @default(DEVELOPER)
+  joinedAt  DateTime    @default(now())
+
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+enum ProjectRole {
+  MANAGER   // 项目经理
+  DEVELOPER // 开发人员
+  TESTER    // 测试人员
+  PRODUCT   // 产品人员
+}
+
+// ==================== 迭代相关 ====================
+
+model Sprint {
+  id          String       @id @default(cuid())
+  projectId   String
+  name        String
+  goal        String?
+  startDate   DateTime
+  endDate     DateTime
+  status      SprintStatus @default(PLANNING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // 关联
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workItems   WorkItem[]
+  follows     Follow[]     @relation("SprintFollow")
+
+  @@map("sprints")
+}
+
+enum SprintStatus {
+  PLANNING    // 规划中
+  IN_PROGRESS // 进行中
+  COMPLETED   // 已完成
+  CANCELLED   // 已取消
+}
+
+// ==================== 工作项相关 ====================
+
+model WorkItem {
+  id                String         @id @default(cuid())
+  projectId         String
+  sprintId          String?
+  parentId          String?
+  type              WorkItemType
+  title             String
+  description       String?        @db.Text
+  priority          Priority       @default(P2)
+  
+  // 时间
+  plannedStartDate  DateTime?
+  plannedEndDate    DateTime?
+  actualStartDate   DateTime?
+  actualEndDate     DateTime?
+  
+  // 工时
+  estimatedHours    Float?
+  actualHours       Float?
+  
+  // 阶段和状态
+  currentPhase      Phase          @default(DEVELOPMENT)
+  devStatus         String         @default("NOT_STARTED")
+  testStatus        String         @default("NOT_STARTED")
+  verifyStatus      String         @default("NOT_STARTED")
+  
+  // 负责人
+  creatorId         String
+  devOwnerId        String?
+  testOwnerId       String?
+  verifyOwnerId     String?
+  
+  // 是否需要验收（任务/缺陷可选）
+  requireVerify     Boolean        @default(false)
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // 关联
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint            Sprint?        @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  parent            WorkItem?      @relation("WorkItemHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children          WorkItem[]     @relation("WorkItemHierarchy")
+  creator           User           @relation("WorkItemCreator", fields: [creatorId], references: [id])
+  devOwner          User?          @relation("DevOwner", fields: [devOwnerId], references: [id])
+  testOwner         User?          @relation("TestOwner", fields: [testOwnerId], references: [id])
+  verifyOwner       User?          @relation("VerifyOwner", fields: [verifyOwnerId], references: [id])
+  
+  // 依赖关系
+  dependencies      WorkItemDependency[] @relation("DependentItem")
+  dependents        WorkItemDependency[] @relation("DependsOnItem")
+  
+  // 其他关联
+  comments          Comment[]
+  follows           Follow[]       @relation("WorkItemFollow")
+  activityLogs      ActivityLog[]
+  progressLogs      ProgressLog[]
+
+  @@map("work_items")
+}
+
+enum WorkItemType {
+  REQUIREMENT // 需求
+  TASK        // 任务
+  BUG         // 缺陷
+}
+
+enum Priority {
+  P0  // 最高
+  P1
+  P2
+  P3
+  P4  // 最低
+}
+
+enum Phase {
+  DEVELOPMENT // 开发
+  TESTING     // 测试
+  VERIFICATION // 验收
+}
+
+// ==================== 依赖关系 ====================
+
+model WorkItemDependency {
+  id              String         @id @default(cuid())
+  workItemId      String
+  dependsOnId     String
+  dependencyType  DependencyType @default(FF)
+  createdAt       DateTime       @default(now())
+  createdById     String
+
+  workItem        WorkItem       @relation("DependentItem", fields: [workItemId], references: [id], onDelete: Cascade)
+  dependsOn       WorkItem       @relation("DependsOnItem", fields: [dependsOnId], references: [id], onDelete: Cascade)
+  createdBy       User           @relation("DependencyCreator", fields: [createdById], references: [id])
+  pokeRecords     PokeRecord[]
+
+  @@unique([workItemId, dependsOnId])
+  @@map("work_item_dependencies")
+}
+
+enum DependencyType {
+  FF  // 完成-完成
+}
+
+// ==================== 戳一戳记录 ====================
+
+model PokeRecord {
+  id            String   @id @default(cuid())
+  dependencyId  String
+  pokerId       String
+  pokedId       String
+  message       String
+  createdAt     DateTime @default(now())
+
+  dependency    WorkItemDependency @relation(fields: [dependencyId], references: [id], onDelete: Cascade)
+  poker         User               @relation("Poker", fields: [pokerId], references: [id])
+  poked         User               @relation("Poked", fields: [pokedId], references: [id])
+
+  @@map("poke_records")
+}
+
+// ==================== 评论 ====================
+
+model Comment {
+  id          String   @id @default(cuid())
+  workItemId  String
+  userId      String
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workItem    WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+// ==================== 关注 ====================
+
+model Follow {
+  id          String     @id @default(cuid())
+  userId      String
+  targetType  FollowType
+  sprintId    String?
+  workItemId  String?
+  createdAt   DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sprint      Sprint?    @relation("SprintFollow", fields: [sprintId], references: [id], onDelete: Cascade)
+  workItem    WorkItem?  @relation("WorkItemFollow", fields: [workItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, sprintId, workItemId])
+  @@map("follows")
+}
+
+enum FollowType {
+  SPRINT
+  WORK_ITEM
+}
+
+// ==================== 消息通知 ====================
+
+model Message {
+  id          String      @id @default(cuid())
+  userId      String
+  type        MessageType
+  title       String
+  content     String      @db.Text
+  targetType  String?
+  targetId    String?
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+enum MessageType {
+  POKE            // 戳一戳
+  FOLLOW_CHANGE   // 关注变更
+  OVERDUE         // 逾期警告
+  ASSIGNMENT      // 负责人指派
+  COMMENT         // 评论通知
+  SYSTEM          // 系统通知
+}
+
+// ==================== 操作记录 ====================
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  workItemId  String
+  userId      String
+  action      String
+  oldValue    String?  @db.Text
+  newValue    String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  workItem    WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}
+
+// ==================== 进度记录（TodoList） ====================
+
+model ProgressLog {
+  id          String   @id @default(cuid())
+  workItemId  String
+  userId      String
+  date        DateTime @db.Date
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  workItem    WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([workItemId, userId, date])
+  @@map("progress_logs")
+}
+
+// ==================== 配置相关 ====================
+
+model StatusConfig {
+  id          String       @id @default(cuid())
+  projectId   String
+  workItemType WorkItemType
+  name        String
+  order       Int          @default(0)
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("status_configs")
+}
+
+model PhaseConfig {
+  id            String       @id @default(cuid())
+  projectId     String
+  workItemType  WorkItemType
+  phase         Phase
+  isRequired    Boolean      @default(true)
+  order         Int          @default(0)
+  createdAt     DateTime     @default(now())
+
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, workItemType, phase])
+  @@map("phase_configs")
+}
