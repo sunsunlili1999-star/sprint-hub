@@ -1,337 +1,564 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Plus,
-  Search,
-  MoreVertical,
-  Users,
-  Calendar,
-  FolderKanban,
-  Archive,
-  Star,
-  StarOff,
-} from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
+import {
+  Card,
+  Input,
+  Button,
+  Space,
+  Tag,
+  Avatar,
+  Dropdown,
+  Modal,
+  Form,
+  Select,
+  DatePicker,
+  Row,
+  Col,
+  Typography,
+  Empty,
+  Skeleton,
+  message,
+  Tooltip,
+} from "antd"
+import {
+  SearchOutlined,
+  PlusOutlined,
+  StarOutlined,
+  StarFilled,
+  MoreOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ProjectOutlined,
+  FileTextOutlined,
+  CalendarOutlined,
+  RocketOutlined,
+} from "@ant-design/icons"
+import type { MenuProps } from "antd"
+import dayjs from "dayjs"
+import { useBreadcrumb } from "@/components/layout/main-layout"
+import { projectApi, productApi, type Project, type Product } from "@/lib/api"
 
-// 模拟项目数据
-const mockProjects = [
-  {
-    id: "1",
-    name: "用户系统重构",
-    code: "USR",
-    description: "重构现有用户系统，提升性能和用户体验",
-    status: "ACTIVE",
-    progress: 65,
-    currentSprint: "Sprint 3",
-    memberCount: 8,
-    workItemCount: 24,
-    endDate: "2026-03-15",
-    starred: true,
-    members: [
-      { name: "张三", avatar: "张" },
-      { name: "李四", avatar: "李" },
-      { name: "王五", avatar: "王" },
-    ],
-  },
-  {
-    id: "2",
-    name: "支付模块优化",
-    code: "PAY",
-    description: "优化支付流程，接入新的支付渠道",
-    status: "ACTIVE",
-    progress: 40,
-    currentSprint: "Sprint 2",
-    memberCount: 5,
-    workItemCount: 18,
-    endDate: "2026-03-20",
-    starred: false,
-    members: [
-      { name: "赵六", avatar: "赵" },
-      { name: "钱七", avatar: "钱" },
-    ],
-  },
-  {
-    id: "3",
-    name: "后台管理系统",
-    code: "ADMIN",
-    description: "内部管理系统，用于运营和数据分析",
-    status: "ACTIVE",
-    progress: 85,
-    currentSprint: "Sprint 5",
-    memberCount: 6,
-    workItemCount: 32,
-    endDate: "2026-03-10",
-    starred: true,
-    members: [
-      { name: "张三", avatar: "张" },
-      { name: "孙八", avatar: "孙" },
-      { name: "周九", avatar: "周" },
-    ],
-  },
-  {
-    id: "4",
-    name: "移动端APP",
-    code: "APP",
-    description: "iOS和Android移动应用开发",
-    status: "ARCHIVED",
-    progress: 100,
-    currentSprint: "已完成",
-    memberCount: 4,
-    workItemCount: 45,
-    endDate: "2026-02-28",
-    starred: false,
-    members: [
-      { name: "李四", avatar: "李" },
-      { name: "王五", avatar: "王" },
-    ],
-  },
-]
+const { Text, Paragraph } = Typography
+const { RangePicker } = DatePicker
 
-export default function ProjectsPage() {
-  const [filter, setFilter] = useState<"all" | "active" | "archived" | "starred">("all")
-  const [searchQuery, setSearchQuery] = useState("")
+// 项目状态颜色
+const statusConfig: Record<string, { label: string; color: string }> = {
+  ACTIVE: { label: "进行中", color: "processing" },
+  ARCHIVED: { label: "已归档", color: "default" },
+}
 
-  const filteredProjects = mockProjects.filter((project) => {
-    const matchesSearch =
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.code.toLowerCase().includes(searchQuery.toLowerCase())
+// Project card component
+function ProjectCard({ 
+  project, 
+  onEdit, 
+  onDelete,
+  onToggleStar,
+}: { 
+  project: Project
+  onEdit: (project: Project) => void
+  onDelete: (project: Project) => void
+  onToggleStar: (project: Project) => void
+}) {
+  const getDropdownItems = (): MenuProps["items"] => [
+    {
+      key: "edit",
+      icon: <EditOutlined />,
+      label: "编辑项目",
+      onClick: () => onEdit(project),
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "delete",
+      icon: <DeleteOutlined />,
+      label: "删除项目",
+      danger: true,
+      onClick: () => onDelete(project),
+    },
+  ]
 
-    if (filter === "all") return matchesSearch
-    if (filter === "active") return project.status === "ACTIVE" && matchesSearch
-    if (filter === "archived") return project.status === "ARCHIVED" && matchesSearch
-    if (filter === "starred") return project.starred && matchesSearch
-    return matchesSearch
-  })
+  const statusInfo = statusConfig[project.status] || { label: project.status, color: "default" }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* 页面标题和操作 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">项目列表</h1>
-          <p className="text-muted-foreground">管理你参与的所有项目</p>
-        </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-              <Plus className="w-4 h-4 mr-2" />
-              新建项目
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>创建新项目</DialogTitle>
-              <DialogDescription>填写项目基本信息来创建一个新项目</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">项目名称</label>
-                <Input placeholder="输入项目名称" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">项目编码</label>
-                <Input placeholder="如: USR, PAY" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">项目描述</label>
-                <Input placeholder="简要描述项目目标" />
-              </div>
+    <Card hoverable style={{ height: "100%", borderColor: "#e2e8f0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+        <Link href={`/projects/${project.id}`} style={{ flex: 1, minWidth: 0 }}>
+          <Space align="start">
+            <Avatar
+              shape="square"
+              size={40}
+              style={{
+                background: "linear-gradient(135deg, #7c7cff 0%, #a78bfa 100%)",
+                flexShrink: 0,
+              }}
+              icon={<ProjectOutlined />}
+            />
+            <div style={{ minWidth: 0 }}>
+              <Text strong style={{ fontSize: 15, color: "#475569" }}>
+                {project.name}
+              </Text>
+              <br />
+              <Space size={4} style={{ marginTop: 4 }}>
+                <Tag>{project.code}</Tag>
+                <Tag color={statusInfo.color}>{statusInfo.label}</Tag>
+              </Space>
             </div>
-            <DialogFooter>
-              <Button variant="outline">取消</Button>
-              <Button>创建项目</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* 筛选和搜索 */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="搜索项目名称或编码..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+          </Space>
+        </Link>
+        <Space size={4}>
+          <Button
+            type="text"
+            size="small"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onToggleStar(project)
+            }}
+            icon={
+              project.starred ? (
+                <StarFilled style={{ color: "#faad14" }} />
+              ) : (
+                <StarOutlined />
+              )
+            }
           />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={filter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter("all")}
-          >
-            全部
-          </Button>
-          <Button
-            variant={filter === "active" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter("active")}
-          >
-            进行中
-          </Button>
-          <Button
-            variant={filter === "archived" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter("archived")}
-          >
-            已归档
-          </Button>
-          <Button
-            variant={filter === "starred" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter("starred")}
-          >
-            <Star className="w-4 h-4 mr-1" />
-            已收藏
-          </Button>
-        </div>
+          <Dropdown menu={{ items: getDropdownItems() }} trigger={["click"]}>
+            <Button type="text" size="small" icon={<MoreOutlined />} />
+          </Dropdown>
+        </Space>
       </div>
 
-      {/* 项目卡片网格 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.map((project) => (
-          <Card
-            key={project.id}
-            className={`hover:shadow-lg transition-all cursor-pointer ${
-              project.status === "ARCHIVED" ? "opacity-70" : ""
-            }`}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <FolderKanban className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <Link href={`/projects/${project.id}`}>
-                      <CardTitle className="text-lg hover:text-blue-600 transition-colors">
-                        {project.name}
-                      </CardTitle>
-                    </Link>
-                    <Badge variant="outline" className="mt-1">
-                      {project.code}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    {project.starred ? (
-                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    ) : (
-                      <StarOff className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>编辑项目</DropdownMenuItem>
-                      <DropdownMenuItem>项目设置</DropdownMenuItem>
-                      <DropdownMenuItem>成员管理</DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Archive className="w-4 h-4 mr-2" />
-                        归档项目
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              <CardDescription className="mt-2 line-clamp-2">
-                {project.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* 进度条 */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">项目进度</span>
-                  <span className="font-medium">{project.progress}%</span>
-                </div>
-                <Progress value={project.progress} className="h-2" />
-              </div>
+      <Paragraph
+        type="secondary"
+        ellipsis={{ rows: 2 }}
+        style={{ marginBottom: 12, minHeight: 44 }}
+      >
+        {project.description || "暂无描述"}
+      </Paragraph>
 
-              {/* 项目信息 */}
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    {project.currentSprint}
-                  </span>
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    {project.memberCount}
-                  </span>
-                </div>
-                <Badge variant={project.status === "ACTIVE" ? "success" : "secondary"}>
-                  {project.status === "ACTIVE" ? "进行中" : "已归档"}
-                </Badge>
-              </div>
-
-              {/* 成员头像 */}
-              <div className="flex items-center justify-between">
-                <div className="flex -space-x-2">
-                  {project.members.slice(0, 4).map((member, index) => (
-                    <Avatar key={index} className="w-8 h-8 border-2 border-white">
-                      <AvatarImage src={`/avatars/${member.name}.png`} />
-                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                        {member.avatar}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {project.memberCount > 4 && (
-                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-muted-foreground">
-                      +{project.memberCount - 4}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  截止 {project.endDate}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* 空状态 */}
-      {filteredProjects.length === 0 && (
-        <div className="text-center py-12">
-          <FolderKanban className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">没有找到项目</h3>
-          <p className="text-muted-foreground mb-4">尝试调整筛选条件或创建新项目</p>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            创建第一个项目
-          </Button>
+      {/* 关联产品 */}
+      {project.product && (
+        <div style={{ marginBottom: 12 }}>
+          <Tag color="purple" style={{ margin: 0 }}>
+            关联产品: {project.product.name}
+          </Tag>
         </div>
       )}
+
+      {/* 日期 */}
+      {(project.startDate || project.endDate) && (
+        <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 4 }}>
+          <CalendarOutlined style={{ color: "#64748b", fontSize: 12 }} />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {project.startDate || "?"} ~ {project.endDate || "?"}
+          </Text>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* 团队成员 */}
+        <Avatar.Group maxCount={4} size="small">
+          {project.members.map((member) => (
+            <Tooltip key={member.id} title={member.name}>
+              <Avatar style={{ background: "#a5b4fc" }}>
+                {member.name?.[0] || "?"}
+              </Avatar>
+            </Tooltip>
+          ))}
+        </Avatar.Group>
+
+        {/* 统计 */}
+        <Space size={12}>
+          <Space size={4}>
+            <FileTextOutlined style={{ color: "#64748b", fontSize: 13 }} />
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {project.requirementCount}
+            </Text>
+          </Space>
+          <Space size={4}>
+            <RocketOutlined style={{ color: "#64748b", fontSize: 13 }} />
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {project.sprintCount}
+            </Text>
+          </Space>
+        </Space>
+      </div>
+    </Card>
+  )
+}
+
+export default function ProjectsPage() {
+  const { setBreadcrumbs } = useBreadcrumb()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<"all" | "starred">("all")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [form] = Form.useForm()
+  const [editForm] = Form.useForm()
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    setBreadcrumbs([{ title: "项目管理" }])
+  }, [setBreadcrumbs])
+
+  // 加载产品列表（用于选择关联产品）
+  const loadProducts = useCallback(async () => {
+    try {
+      const data = await productApi.getList()
+      setProducts(data)
+    } catch (error) {
+      console.error("加载产品列表失败", error)
+    }
+  }, [])
+
+  // 加载项目列表
+  const loadProjects = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await projectApi.getList({
+        search: searchQuery,
+        starred: filter === "starred",
+      })
+      setProjects(data)
+    } catch (error) {
+      message.error("加载项目列表失败")
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }, [searchQuery, filter])
+
+  useEffect(() => {
+    loadProducts()
+  }, [loadProducts])
+
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
+
+  // 过滤项目
+  const filteredProjects = projects.filter((project) => {
+    if (filter === "starred") return project.starred
+    return true
+  })
+
+  // 创建项目
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields()
+      setSubmitting(true)
+      
+      const data = {
+        name: values.name,
+        code: values.code,
+        description: values.description,
+        productId: values.productId,
+        startDate: values.dateRange?.[0]?.format("YYYY-MM-DD"),
+        endDate: values.dateRange?.[1]?.format("YYYY-MM-DD"),
+      }
+      
+      await projectApi.create(data)
+      message.success("创建成功")
+      setIsCreateOpen(false)
+      form.resetFields()
+      loadProjects()
+    } catch (error: any) {
+      if (error.message) {
+        message.error(error.message)
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // 编辑项目
+  const handleEdit = (project: Project) => {
+    setEditingProject(project)
+    editForm.setFieldsValue({
+      name: project.name,
+      code: project.code,
+      description: project.description,
+      productId: project.product?.id,
+      dateRange: project.startDate && project.endDate 
+        ? [dayjs(project.startDate), dayjs(project.endDate)]
+        : undefined,
+    })
+    setIsEditOpen(true)
+  }
+
+  const handleEditSubmit = async () => {
+    if (!editingProject) return
+    try {
+      const values = await editForm.validateFields()
+      setSubmitting(true)
+      
+      const data = {
+        name: values.name,
+        code: values.code,
+        description: values.description,
+        productId: values.productId,
+        startDate: values.dateRange?.[0]?.format("YYYY-MM-DD"),
+        endDate: values.dateRange?.[1]?.format("YYYY-MM-DD"),
+      }
+      
+      await projectApi.update(editingProject.id, data)
+      message.success("更新成功")
+      setIsEditOpen(false)
+      setEditingProject(null)
+      editForm.resetFields()
+      loadProjects()
+    } catch (error: any) {
+      if (error.message) {
+        message.error(error.message)
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // 切换收藏状态
+  const handleToggleStar = async (project: Project) => {
+    try {
+      const result = await projectApi.toggleStar(project.id)
+      setProjects(prev => 
+        prev.map(p => 
+          p.id === project.id ? { ...p, starred: result.starred } : p
+        )
+      )
+      message.success(result.starred ? "已收藏" : "已取消收藏")
+    } catch (error) {
+      message.error("操作失败")
+      console.error(error)
+    }
+  }
+
+  // 删除项目
+  const handleDelete = (project: Project) => {
+    Modal.confirm({
+      title: "确认删除",
+      content: `确定要删除项目「${project.name}」吗？此操作将删除项目下所有数据。`,
+      okText: "删除",
+      okType: "danger",
+      cancelText: "取消",
+      onOk: async () => {
+        try {
+          await projectApi.delete(project.id)
+          message.success("删除成功")
+          loadProjects()
+        } catch (error: any) {
+          message.error(error.message || "删除失败")
+        }
+      },
+    })
+  }
+
+  // 表单项 - 产品选择
+  const productOptions = products.map(p => ({
+    value: p.id,
+    label: `${p.name} (${p.code})`,
+  }))
+
+  return (
+    <div style={{ padding: 24 }}>
+      {/* 工具栏 */}
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between" }}>
+        <Space size={16}>
+          <Input
+            placeholder="搜索项目..."
+            prefix={<SearchOutlined />}
+            style={{ width: 240 }}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onPressEnter={() => loadProjects()}
+            allowClear
+          />
+          <Button.Group>
+            <Button
+              type={filter === "all" ? "primary" : "default"}
+              onClick={() => setFilter("all")}
+            >
+              全部
+            </Button>
+            <Button
+              type={filter === "starred" ? "primary" : "default"}
+              icon={<StarFilled style={{ color: "#faad14" }} />}
+              onClick={() => setFilter("starred")}
+            >
+              已收藏
+            </Button>
+          </Button.Group>
+        </Space>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateOpen(true)}>
+          新建项目
+        </Button>
+      </div>
+
+      {/* 项目卡片 */}
+      {loading ? (
+        <Row gutter={[20, 20]}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Col key={i} xs={24} sm={12} lg={8} xl={6}>
+              <Card style={{ height: "100%", borderColor: "#e2e8f0" }}>
+                <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                  <Skeleton.Avatar active size={40} shape="square" />
+                  <div style={{ flex: 1 }}>
+                    <Skeleton.Input active size="small" style={{ width: 120, marginBottom: 8 }} />
+                    <Space size={4}>
+                      <Skeleton.Button active size="small" style={{ width: 50, height: 22 }} />
+                      <Skeleton.Button active size="small" style={{ width: 50, height: 22 }} />
+                    </Space>
+                  </div>
+                </div>
+                <Skeleton active paragraph={{ rows: 2 }} title={false} />
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+                  <Avatar.Group>
+                    {[1, 2, 3].map(j => (
+                      <Skeleton.Avatar key={j} active size="small" />
+                    ))}
+                  </Avatar.Group>
+                  <Skeleton.Input active size="small" style={{ width: 80 }} />
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ) : filteredProjects.length > 0 ? (
+        <Row gutter={[20, 20]}>
+          {filteredProjects.map((project) => (
+            <Col key={project.id} xs={24} sm={12} lg={8} xl={6}>
+              <ProjectCard 
+                project={project} 
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleStar={handleToggleStar}
+              />
+            </Col>
+          ))}
+        </Row>
+      ) : (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={searchQuery ? "没有找到匹配的项目" : "暂无项目"}
+        >
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateOpen(true)}>
+            创建第一个项目
+          </Button>
+        </Empty>
+      )}
+
+      {/* 创建项目弹窗 */}
+      <Modal
+        title="创建新项目"
+        open={isCreateOpen}
+        onCancel={() => {
+          setIsCreateOpen(false)
+          form.resetFields()
+        }}
+        onOk={handleCreate}
+        okText="创建"
+        cancelText="取消"
+        confirmLoading={submitting}
+        width={560}
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="name"
+                label="项目名称"
+                rules={[{ required: true, message: "请输入项目名称" }]}
+              >
+                <Input placeholder="输入项目名称" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="code"
+                label="项目编码"
+                rules={[{ required: true, message: "请输入项目编码" }]}
+              >
+                <Input placeholder="如: SPRINT-2024 (唯一标识)" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="productId" label="关联产品">
+            <Select
+              placeholder="选择关联的产品（可选）"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={productOptions}
+            />
+          </Form.Item>
+          <Form.Item name="dateRange" label="项目周期">
+            <RangePicker style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item name="description" label="项目描述">
+            <Input.TextArea rows={3} placeholder="简要描述项目目标和范围" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 编辑项目弹窗 */}
+      <Modal
+        title="编辑项目"
+        open={isEditOpen}
+        onCancel={() => {
+          setIsEditOpen(false)
+          setEditingProject(null)
+          editForm.resetFields()
+        }}
+        onOk={handleEditSubmit}
+        okText="保存"
+        cancelText="取消"
+        confirmLoading={submitting}
+        width={560}
+      >
+        <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="name"
+                label="项目名称"
+                rules={[{ required: true, message: "请输入项目名称" }]}
+              >
+                <Input placeholder="输入项目名称" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="code"
+                label="项目编码"
+                rules={[{ required: true, message: "请输入项目编码" }]}
+              >
+                <Input placeholder="如: SPRINT-2024 (唯一标识)" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="productId" label="关联产品">
+            <Select
+              placeholder="选择关联的产品（可选）"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={productOptions}
+            />
+          </Form.Item>
+          <Form.Item name="dateRange" label="项目周期">
+            <RangePicker style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item name="description" label="项目描述">
+            <Input.TextArea rows={3} placeholder="简要描述项目目标和范围" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }

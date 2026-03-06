@@ -23,7 +23,11 @@ model User {
 
   // 关联
   projectMembers    ProjectMember[]
+  productMembers    ProductMember[]
+  ownedProducts     Product[]        @relation("ProductOwner")
   createdProjects   Project[]        @relation("ProjectCreator")
+  createdProducts   Product[]        @relation("ProductCreator")
+  uploadedDocuments Document[]       @relation("DocumentUploader")
   createdWorkItems  WorkItem[]       @relation("WorkItemCreator")
   devWorkItems      WorkItem[]       @relation("DevOwner")
   testWorkItems     WorkItem[]       @relation("TestOwner")
@@ -36,6 +40,8 @@ model User {
   pokesReceived     PokeRecord[]     @relation("Poked")
   activityLogs      ActivityLog[]
   createdDependencies WorkItemDependency[] @relation("DependencyCreator")
+  createdReleases   Release[]        @relation("ReleaseCreator")
+  releaseOwner      Release[]        @relation("ReleaseOwner")
 
   @@map("users")
 }
@@ -48,6 +54,123 @@ enum SystemRole {
   PRODUCT         // 产品人员
 }
 
+// ==================== 产品相关 ====================
+
+model Product {
+  id          String        @id @default(cuid())
+  name        String
+  code        String        @unique
+  description String?
+  status      ProductStatus @default(ACTIVE)
+  starred     Boolean       @default(false)  // 是否收藏
+  ownerId     String        // 产品负责人
+  creatorId   String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // 关联
+  owner       User            @relation("ProductOwner", fields: [ownerId], references: [id])
+  creator     User            @relation("ProductCreator", fields: [creatorId], references: [id])
+  members     ProductMember[]
+  modules     Module[]
+  documents   Document[]
+  versions    ProductVersion[]
+  workItems   WorkItem[]      @relation("ProductWorkItem")
+  projects    Project[]       @relation("ProductProjects")
+
+  @@map("products")
+}
+
+// 产品模块
+model Module {
+  id          String   @id @default(cuid())
+  productId   String
+  parentId    String?
+  name        String
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  parent      Module?   @relation("ModuleHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Module[]  @relation("ModuleHierarchy")
+  workItems   WorkItem[] @relation("ModuleWorkItem")
+
+  @@map("modules")
+}
+
+// 产品文档
+model Document {
+  id          String   @id @default(cuid())
+  productId   String
+  name        String
+  fileName    String
+  fileSize    Int
+  fileType    String
+  filePath    String
+  uploaderId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  uploader    User     @relation("DocumentUploader", fields: [uploaderId], references: [id])
+
+  @@map("documents")
+}
+
+// 产品版本
+model ProductVersion {
+  id          String              @id @default(cuid())
+  productId   String
+  name        String              // 如 v1.0.0
+  description String?
+  status      ProductVersionStatus @default(PLANNING)
+  plannedDate DateTime?
+  releaseDate DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  // 关联
+  product     Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  workItems   WorkItem[] @relation("VersionWorkItem")
+
+  @@map("product_versions")
+}
+
+enum ProductVersionStatus {
+  PLANNING    // 规划中
+  DEVELOPING  // 开发中
+  RELEASED    // 已发布
+  ARCHIVED    // 已归档
+}
+
+enum ProductStatus {
+  ACTIVE    // 活跃
+  ARCHIVED  // 已归档
+}
+
+model ProductMember {
+  id        String      @id @default(cuid())
+  productId String
+  userId    String
+  role      ProductRole @default(MEMBER)
+  joinedAt  DateTime    @default(now())
+
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@map("product_members")
+}
+
+enum ProductRole {
+  OWNER     // 产品负责人
+  MEMBER    // 成员
+}
+
 // ==================== 项目相关 ====================
 
 model Project {
@@ -56,17 +179,23 @@ model Project {
   code        String        @unique
   description String?
   status      ProjectStatus @default(ACTIVE)
+  starred     Boolean       @default(false)  // 是否收藏
+  productId   String?       // 关联产品
   creatorId   String
+  startDate   DateTime?     // 计划开始日期
+  endDate     DateTime?     // 计划结束日期
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
   // 关联
+  product     Product?        @relation("ProductProjects", fields: [productId], references: [id], onDelete: SetNull)
   creator     User            @relation("ProjectCreator", fields: [creatorId], references: [id])
   members     ProjectMember[]
   sprints     Sprint[]
-  workItems   WorkItem[]
+  workItems   WorkItem[]      @relation("ProjectWorkItem")
   statusConfigs StatusConfig[]
   phaseConfigs  PhaseConfig[]
+  releases    Release[]
 
   @@map("projects")
 }
@@ -129,10 +258,15 @@ enum SprintStatus {
 
 model WorkItem {
   id                String         @id @default(cuid())
-  projectId         String
+  // 可以属于产品、项目或两者都有
+  productId         String?
+  projectId         String?
+  moduleId          String?
   sprintId          String?
+  versionId         String?        // 所属版本
   parentId          String?
   type              WorkItemType
+  requirementType   RequirementType? // 需求类型（仅需求有效）
   title             String
   description       String?        @db.Text
   priority          Priority       @default(P2)
@@ -166,8 +300,11 @@ model WorkItem {
   updatedAt         DateTime       @updatedAt
 
   // 关联
-  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  product           Product?       @relation("ProductWorkItem", fields: [productId], references: [id], onDelete: SetNull)
+  project           Project?       @relation("ProjectWorkItem", fields: [projectId], references: [id], onDelete: Cascade)
+  module            Module?        @relation("ModuleWorkItem", fields: [moduleId], references: [id], onDelete: SetNull)
   sprint            Sprint?        @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  version           ProductVersion? @relation("VersionWorkItem", fields: [versionId], references: [id], onDelete: SetNull)
   parent            WorkItem?      @relation("WorkItemHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children          WorkItem[]     @relation("WorkItemHierarchy")
   creator           User           @relation("WorkItemCreator", fields: [creatorId], references: [id])
@@ -178,6 +315,9 @@ model WorkItem {
   // 依赖关系
   dependencies      WorkItemDependency[] @relation("DependentItem")
   dependents        WorkItemDependency[] @relation("DependsOnItem")
+  
+  // 发布关联
+  releaseItems      ReleaseItem[]
   
   // 其他关联
   comments          Comment[]
@@ -194,6 +334,13 @@ enum WorkItemType {
   BUG         // 缺陷
 }
 
+enum RequirementType {
+  FEATURE     // 功能需求
+  OPTIMIZATION // 优化
+  SECURITY    // 安全
+  TECH        // 技改
+}
+
 enum Priority {
   P0  // 最高
   P1
@@ -206,6 +353,59 @@ enum Phase {
   DEVELOPMENT // 开发
   TESTING     // 测试
   VERIFICATION // 验收
+}
+
+// ==================== 发布管理 ====================
+
+model Release {
+  id              String        @id @default(cuid())
+  projectId       String
+  name            String
+  description     String?       @db.Text
+  plannedDate     DateTime
+  actualDate      DateTime?
+  status          ReleaseStatus @default(PLANNING)
+  ownerId         String
+  creatorId       String
+  riskLevel       RiskLevel     @default(LOW)
+  riskDescription String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // 关联
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner           User          @relation("ReleaseOwner", fields: [ownerId], references: [id])
+  creator         User          @relation("ReleaseCreator", fields: [creatorId], references: [id])
+  items           ReleaseItem[]
+
+  @@map("releases")
+}
+
+enum ReleaseStatus {
+  PLANNING    // 规划中
+  READY       // 待发布
+  IN_PROGRESS // 发布中
+  COMPLETED   // 已发布
+  CANCELLED   // 已取消
+}
+
+enum RiskLevel {
+  LOW     // 低风险
+  MEDIUM  // 中风险
+  HIGH    // 高风险
+}
+
+model ReleaseItem {
+  id          String   @id @default(cuid())
+  releaseId   String
+  workItemId  String
+  createdAt   DateTime @default(now())
+
+  release     Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  workItem    WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+
+  @@unique([releaseId, workItemId])
+  @@map("release_items")
 }
 
 // ==================== 依赖关系 ====================

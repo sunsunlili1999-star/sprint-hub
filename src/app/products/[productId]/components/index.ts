@@ -1,0 +1,5 @@
+export { ProductDetailTab } from './ProductDetailTab'
+export { ProductRequirementsTab } from './ProductRequirementsTab'
+export { ProductDocumentsTab } from './ProductDocumentsTab'
+export { ProductDetailSkeleton, ProductRequirementsSkeleton, ProductDocumentsSkeleton } from './TabSkeletons'
+export { ProductLayoutClient } from './ProductLayoutClient'

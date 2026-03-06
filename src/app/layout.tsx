@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { ConfigProvider } from "antd";
+import zhCN from "antd/locale/zh_CN";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+import { MainLayout } from "@/components/layout/main-layout";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 
 export const metadata: Metadata = {
   title: "SprintHub - 项目迭代管理系统",
@@ -22,16 +19,46 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Header />
-            <main className="flex-1 overflow-y-auto bg-slate-50">
-              {children}
-            </main>
-          </div>
-        </div>
+      <body className="font-sans antialiased">
+        <AntdRegistry>
+          <SessionProvider>
+            <ConfigProvider
+              locale={zhCN}
+              theme={{
+                token: {
+                  colorPrimary: "#7c7cff",
+                  colorLink: "#7c7cff",
+                  colorLinkHover: "#9999ff",
+                  colorText: "#475569",
+                  colorTextSecondary: "#64748b",
+                  borderRadius: 6,
+                },
+                components: {
+                  Button: {
+                    colorPrimary: "#7c7cff",
+                    colorPrimaryHover: "#9999ff",
+                    colorPrimaryActive: "#6366f1",
+                  },
+                  Menu: {
+                    colorItemBgSelected: "rgba(124, 124, 255, 0.1)",
+                    colorItemTextSelected: "#7c7cff",
+                    // dark 模式菜单样式
+                    darkItemBg: "#242c40",
+                    darkSubMenuItemBg: "#242c40",
+                    darkItemSelectedBg: "rgba(124, 124, 255, 0.3)",
+                    darkItemSelectedColor: "#ffffff",
+                    darkItemHoverBg: "rgba(255, 255, 255, 0.08)",
+                  },
+                  Table: {
+                    colorBgContainer: "#ffffff",
+                  },
+                },
+              }}
+            >
+              <MainLayout>{children}</MainLayout>
+            </ConfigProvider>
+          </SessionProvider>
+        </AntdRegistry>
       </body>
     </html>
   );

@@ -9,10 +9,9 @@ import {
   ListTodo,
   Bell,
   Settings,
-  Users,
   Calendar,
-  BarChart3,
-  Sparkles,
+  Package,
+  Rocket,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
@@ -27,17 +26,27 @@ import {
 
 const navItems = [
   {
-    title: "首页",
+    title: "工作台",
     href: "/",
     icon: LayoutDashboard,
   },
   {
-    title: "项目",
+    title: "产品管理",
+    href: "/products",
+    icon: Package,
+  },
+  {
+    title: "项目管理",
     href: "/projects",
     icon: FolderKanban,
   },
   {
-    title: "待办事项",
+    title: "发布管理",
+    href: "/releases",
+    icon: Rocket,
+  },
+  {
+    title: "智能待办",
     href: "/todos",
     icon: ListTodo,
   },
@@ -46,16 +55,6 @@ const navItems = [
     href: "/calendar",
     icon: Calendar,
   },
-  {
-    title: "统计报表",
-    href: "/reports",
-    icon: BarChart3,
-  },
-  {
-    title: "AI助手",
-    href: "/ai",
-    icon: Sparkles,
-  },
 ]
 
 const bottomNavItems = [
@@ -63,11 +62,6 @@ const bottomNavItems = [
     title: "消息中心",
     href: "/messages",
     icon: Bell,
-  },
-  {
-    title: "团队成员",
-    href: "/members",
-    icon: Users,
   },
   {
     title: "设置",

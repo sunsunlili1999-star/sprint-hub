@@ -1,8 +1,7 @@
 "use client"
 
-import { Bell, Search, Plus } from "lucide-react"
+import { Bell, Plus, ChevronRight, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -13,19 +12,41 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
+import { useBreadcrumb } from "./breadcrumb-provider"
 
 export function Header() {
+  const { breadcrumbs } = useBreadcrumb()
+
   return (
-    <header className="h-16 border-b bg-white flex items-center justify-between px-6">
-      {/* Search */}
-      <div className="flex items-center gap-4 flex-1 max-w-xl">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="搜索项目、迭代、工作项..."
-            className="pl-10 bg-slate-50 border-slate-200 focus:bg-white"
-          />
-        </div>
+    <header className="h-14 border-b bg-white flex items-center justify-between px-6">
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-2 text-sm">
+        <Link href="/" className="text-gray-500 hover:text-gray-900 transition-colors">
+          <Home className="w-4 h-4" />
+        </Link>
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+            {breadcrumbs.map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="text-gray-500 hover:text-gray-900 transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span className="text-gray-900 font-medium">{item.label}</span>
+                )}
+                {index < breadcrumbs.length - 1 && (
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                )}
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Actions */}
@@ -33,8 +54,8 @@ export function Header() {
         {/* Quick Create */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Plus className="w-4 h-4 mr-1" />
               创建
             </Button>
           </DropdownMenuTrigger>
@@ -62,9 +83,9 @@ export function Header() {
         </DropdownMenu>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500">
+        <Button variant="ghost" size="icon" className="relative h-8 w-8">
+          <Bell className="w-4 h-4" />
+          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-red-500">
             3
           </Badge>
         </Button>
@@ -72,10 +93,10 @@ export function Header() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src="/avatars/user.png" alt="用户头像" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
                   张
                 </AvatarFallback>
               </Avatar>
