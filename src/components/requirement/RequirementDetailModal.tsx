@@ -35,6 +35,7 @@ import {
   LinkOutlined,
   SendOutlined,
   FileTextOutlined,
+  FileTextFilled,
   CheckCircleOutlined,
   ClockCircleOutlined,
   SyncOutlined,
@@ -42,10 +43,10 @@ import {
   HistoryOutlined,
   CommentOutlined,
   ApartmentOutlined,
-  BranchesOutlined,
   TagOutlined,
   FieldTimeOutlined,
   EditOutlined,
+  ThunderboltFilled,
 } from "@ant-design/icons"
 import dayjs from "dayjs"
 import {
@@ -108,6 +109,8 @@ export interface RequirementDetailModalProps {
   // 默认值（新建时使用）
   defaultProductId?: string
   defaultProjectId?: string
+  // 子项点击回调
+  onTaskClick?: (taskId: string) => void
 }
 
 // ==================== 组件 ====================
@@ -123,6 +126,7 @@ export function RequirementDetailModal({
   versions = [],
   defaultProductId,
   defaultProjectId,
+  onTaskClick,
 }: RequirementDetailModalProps) {
   const isCreateMode = !requirementId
 
@@ -569,8 +573,9 @@ export function RequirementDetailModal({
                 minHeight: 56,
               }}
             >
-              {/* 标题（可编辑） */}
-              <div style={{ flex: 1, minWidth: 0, marginRight: 16 }}>
+              {/* 类型图标 + 标题（可编辑） */}
+              <div style={{ flex: 1, minWidth: 0, marginRight: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                <FileTextFilled style={{ fontSize: 20, color: "#7c7cff", flexShrink: 0 }} />
                 {editingTitle ? (
                   <Input
                     ref={titleInputRef}
@@ -580,11 +585,11 @@ export function RequirementDetailModal({
                     onKeyDown={handleTitleKeyDown}
                     placeholder="输入需求标题..."
                     variant="borderless"
-                    style={{ fontSize: 18, fontWeight: 600, padding: "4px 0" }}
+                    style={{ fontSize: 18, fontWeight: 600, padding: "4px 0", flex: 1 }}
                   />
                 ) : (
                   <div
-                    style={{ cursor: "pointer", padding: "4px 0", borderRadius: 4 }}
+                    style={{ cursor: "pointer", padding: "4px 0", borderRadius: 4, flex: 1 }}
                     onClick={startEditingTitle}
                   >
                     <Title
@@ -980,10 +985,10 @@ export function RequirementDetailModal({
                       ),
                     },
                     {
-                      key: "workitems",
+                      key: "tasks",
                       label: (
                         <span>
-                          <ApartmentOutlined /> 工作项 ({requirement.childCount})
+                          <ApartmentOutlined /> 任务 ({requirement.childCount})
                         </span>
                       ),
                       children: (
@@ -1015,7 +1020,7 @@ export function RequirementDetailModal({
                               onClick={handleAddNewWorkItem}
                               disabled={isCreateMode}
                             >
-                              添加子任务
+                              添加任务
                             </Button>
                           </div>
 
@@ -1094,12 +1099,12 @@ export function RequirementDetailModal({
                               </div>
                             )}
 
-                            {/* 已有工作项列表 */}
+                            {/* 已有任务列表 */}
                             {requirement.children.length > 0 ? (
                               requirement.children.map((item, index) => {
                                 const isCompleted = item.status === "COMPLETED"
                                 const bgColor = isCompleted ? "#f9fef9" : "#fff"
-                                const hoverBgColor = isCompleted ? "#f0faf0" : "#fafafa"
+                                const hoverBgColor = isCompleted ? "#f0faf0" : "#f0f4ff"
 
                                 return (
                                   <div
@@ -1113,16 +1118,21 @@ export function RequirementDetailModal({
                                           ? "1px solid #f0f0f0"
                                           : "none",
                                       background: bgColor,
-                                      transition: "background 0.2s",
+                                      transition: "all 0.2s",
                                       cursor: "pointer",
                                     }}
-                                    onMouseEnter={(e) =>
-                                      (e.currentTarget.style.background = hoverBgColor)
-                                    }
-                                    onMouseLeave={(e) =>
-                                      (e.currentTarget.style.background = bgColor)
-                                    }
+                                    onClick={() => onTaskClick?.(item.id)}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.background = hoverBgColor
+                                      e.currentTarget.style.transform = "translateX(4px)"
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background = bgColor
+                                      e.currentTarget.style.transform = "translateX(0)"
+                                    }}
                                   >
+                                    {/* 任务图标 */}
+                                    <ThunderboltFilled style={{ color: "#faad14", fontSize: 14, marginRight: 10, flexShrink: 0 }} />
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                       <Text
                                         ellipsis
@@ -1177,6 +1187,10 @@ export function RequirementDetailModal({
                                           size="small"
                                           icon={<EditOutlined />}
                                           style={{ color: "#8c8c8c" }}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            onTaskClick?.(item.id)
+                                          }}
                                         />
                                         <Button
                                           type="text"
@@ -1184,6 +1198,7 @@ export function RequirementDetailModal({
                                           icon={<DeleteOutlined />}
                                           style={{ color: "#8c8c8c" }}
                                           danger
+                                          onClick={(e) => e.stopPropagation()}
                                         />
                                       </Space>
                                     </div>
@@ -1193,131 +1208,10 @@ export function RequirementDetailModal({
                             ) : !newWorkItem?.isEditing ? (
                               <Empty
                                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                description="暂无工作项"
+                                description="暂无任务"
                                 style={{ padding: "40px 0" }}
                               />
                             ) : null}
-                          </div>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: "dependencies",
-                      label: (
-                        <span>
-                          <BranchesOutlined /> 依赖关系
-                        </span>
-                      ),
-                      children: (
-                        <div style={{ padding: 20, height: "100%", overflow: "auto" }}>
-                          <div style={{ marginBottom: 24 }}>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                marginBottom: 12,
-                              }}
-                            >
-                              <Text strong>前置依赖</Text>
-                              <Text
-                                type="secondary"
-                                style={{ marginLeft: 8, fontSize: 12 }}
-                              >
-                                (当前需求依赖的工作项)
-                              </Text>
-                              <Button
-                                type="link"
-                                size="small"
-                                icon={<PlusOutlined />}
-                                style={{ marginLeft: "auto" }}
-                                disabled={isCreateMode}
-                              >
-                                添加
-                              </Button>
-                            </div>
-                            {requirement.dependencies.length > 0 ? (
-                              <List
-                                size="small"
-                                dataSource={requirement.dependencies}
-                                renderItem={(dep) => (
-                                  <List.Item
-                                    style={{
-                                      padding: "8px 12px",
-                                      background: "#f6ffed",
-                                      borderRadius: 6,
-                                      marginBottom: 8,
-                                    }}
-                                    actions={[
-                                      <Button
-                                        key="del"
-                                        type="text"
-                                        size="small"
-                                        danger
-                                        icon={<DeleteOutlined />}
-                                      />,
-                                    ]}
-                                  >
-                                    <Space>
-                                      <LinkOutlined style={{ color: "#52c41a" }} />
-                                      <Text>{dep.workItem.title}</Text>
-                                      {renderWorkItemStatus(dep.workItem.status)}
-                                    </Space>
-                                  </List.Item>
-                                )}
-                              />
-                            ) : (
-                              <Empty
-                                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                description="无前置依赖"
-                              />
-                            )}
-                          </div>
-
-                          <Divider />
-
-                          <div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                marginBottom: 12,
-                              }}
-                            >
-                              <Text strong>后置依赖</Text>
-                              <Text
-                                type="secondary"
-                                style={{ marginLeft: 8, fontSize: 12 }}
-                              >
-                                (依赖当前需求的工作项)
-                              </Text>
-                            </div>
-                            {requirement.dependents.length > 0 ? (
-                              <List
-                                size="small"
-                                dataSource={requirement.dependents}
-                                renderItem={(dep) => (
-                                  <List.Item
-                                    style={{
-                                      padding: "8px 12px",
-                                      background: "#fff7e6",
-                                      borderRadius: 6,
-                                      marginBottom: 8,
-                                    }}
-                                  >
-                                    <Space>
-                                      <LinkOutlined style={{ color: "#fa8c16" }} />
-                                      <Text>{dep.workItem.title}</Text>
-                                      {renderWorkItemStatus(dep.workItem.status)}
-                                    </Space>
-                                  </List.Item>
-                                )}
-                              />
-                            ) : (
-                              <Empty
-                                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                description="无后置依赖"
-                              />
-                            )}
                           </div>
                         </div>
                       ),

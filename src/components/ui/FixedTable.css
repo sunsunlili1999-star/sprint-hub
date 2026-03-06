@@ -58,9 +58,9 @@
   min-height: 0;
 }
 
-/* 关键：让 table 元素在 body 内撑满，当内容少时也能占满空间 */
+/* 表格内容不撑满，保持行高度固定 */
 .fixed-table-container .ant-table-body > table {
-  min-height: 100%;
+  min-height: auto;
 }
 
 /* 滚动条样式 */
@@ -90,4 +90,35 @@
 .fixed-table-container .ant-table-body {
   scrollbar-width: thin;
   scrollbar-color: #e6ebf4 transparent;
+}
+
+/* 树形表格样式 */
+/* 任务行（子节点）的背景色 */
+.fixed-table-container .ant-table-row-level-1 {
+  background-color: #fafbfc;
+}
+
+/* 任务行的所有单元格（包括固定列）都使用同样的背景色 */
+.fixed-table-container .ant-table-row-level-1 > td {
+  background-color: #fafbfc !important;
+}
+
+/* 任务行悬浮效果（包括固定列） */
+.fixed-table-container .ant-table-row-level-1:hover > td {
+  background-color: #f0f4ff !important;
+}
+
+/* 树形展开图标样式 */
+.fixed-table-container .ant-table-row-expand-icon {
+  color: #8c8c8c;
+  transition: transform 0.2s;
+}
+
+.fixed-table-container .ant-table-row-expand-icon-expanded {
+  transform: rotate(90deg);
+}
+
+/* 隐藏默认的缩进占位 */
+.fixed-table-container .ant-table-row-indent {
+  padding-left: 0 !important;
 }

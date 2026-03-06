@@ -27,9 +27,9 @@ export function ProjectLayoutClient({ projectId, children }: ProjectLayoutClient
 
   // 从路径获取当前 Tab
   const getActiveTab = useCallback(() => {
-    if (pathname.endsWith("/requirements")) return "requirements"
-    if (pathname.endsWith("/sprints")) return "sprints"
-    if (pathname.endsWith("/documents")) return "documents"
+    if (pathname.includes("/requirements")) return "requirements"
+    if (pathname.includes("/sprints")) return "sprints"
+    if (pathname.includes("/documents")) return "documents"
     return "overview"
   }, [pathname])
 

@@ -158,6 +158,18 @@ export const moduleApi = {
 
 // ==================== 需求 API ====================
 
+// 子任务类型（简化版）
+export interface RequirementTask {
+  id: string
+  title: string
+  priority: string
+  status: string
+  moduleId: string | null
+  moduleName: string | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+  estimatedHours: number | null
+}
+
 export interface Requirement {
   id: string
   title: string
@@ -173,6 +185,29 @@ export interface Requirement {
   assignee: { id: string; name: string; avatar: string | null } | null
   createdAt: string
   updatedAt: string
+  // 子任务
+  tasks?: RequirementTask[]
+  taskCount?: number
+}
+
+// 树形表格行类型（需求或任务）
+export interface WorkItemRow {
+  id: string
+  type: 'REQUIREMENT' | 'TASK'
+  title: string
+  priority: string
+  status: string
+  moduleId: string | null
+  moduleName: string | null
+  projectId: string | null
+  projectName: string | null
+  sprintName: string | null
+  creator: { id: string; name: string; avatar: string | null } | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+  createdAt: string
+  updatedAt: string
+  taskCount?: number
+  children?: WorkItemRow[]
 }
 
 // 筛选条件类型
@@ -350,6 +385,18 @@ export const projectApi = {
 
 // ==================== 项目需求 API ====================
 
+// 项目需求的子任务类型
+export interface ProjectRequirementTask {
+  id: string
+  title: string
+  priority: string
+  status: string
+  estimatedHours: number | null
+  moduleId: string | null
+  moduleName: string | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+}
+
 export interface ProjectRequirement {
   id: string
   title: string
@@ -371,6 +418,8 @@ export interface ProjectRequirement {
   childCount: number
   createdAt: string
   updatedAt: string
+  // 子任务列表
+  tasks?: ProjectRequirementTask[]
 }
 
 export const projectRequirementApi = {
@@ -431,10 +480,74 @@ export interface Sprint {
   createdAt?: string
 }
 
+export interface SprintStats {
+  // 工作项总体统计
+  totalWorkItems: number
+  completedWorkItems: number
+  inProgressWorkItems: number
+  notStartedWorkItems: number
+  progress: number
+  // 按类型统计
+  totalRequirements: number
+  completedRequirements: number
+  totalTasks: number
+  completedTasks: number
+  totalBugs: number
+  completedBugs: number
+  // 工时统计
+  totalEstimatedHours: number
+  totalActualHours: number
+  completedEstimatedHours: number
+}
+
+export interface SprintMemberStats {
+  user: { id: string; name: string; avatar: string | null }
+  totalItems: number
+  completedItems: number
+  inProgressItems: number
+  totalHours: number
+  completedHours: number
+  actualHours: number
+}
+
+export interface BurndownDataPoint {
+  date: string
+  ideal: number
+  actual: number | null
+}
+
+export interface SprintRequirement {
+  id: string
+  title: string
+  description: string | null
+  priority: string
+  status: string
+  estimatedHours: number | null
+  actualHours: number | null
+  creator: { id: string; name: string; avatar: string | null }
+  assignee: { id: string; name: string; avatar: string | null } | null
+  childCount: number
+  completedChildCount: number
+}
+
+export interface SprintDetail extends Sprint {
+  project: { id: string; name: string }
+  stats: SprintStats
+  memberStats: SprintMemberStats[]
+  burndownByHours: BurndownDataPoint[]
+  burndownByItems: BurndownDataPoint[]
+  requirements: SprintRequirement[]
+}
+
 export const sprintApi = {
   // 获取迭代列表
   getList: (projectId: string) => {
     return request<Sprint[]>(`/projects/${projectId}/sprints`)
+  },
+
+  // 获取迭代详情
+  getDetail: (projectId: string, sprintId: string) => {
+    return request<SprintDetail>(`/projects/${projectId}/sprints/${sprintId}`)
   },
 
   // 创建迭代
@@ -445,10 +558,80 @@ export const sprintApi = {
     })
   },
 
+  // 更新迭代
+  update: (projectId: string, sprintId: string, data: { name?: string; goal?: string; startDate?: string; endDate?: string; status?: string }) => {
+    return request<Sprint>(`/projects/${projectId}/sprints/${sprintId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  },
+
   // 删除迭代
   delete: (projectId: string, sprintId: string) => {
     return request<{ success: boolean }>(`/projects/${projectId}/sprints/${sprintId}`, {
       method: "DELETE",
     })
   },
+
+  // 获取迭代任务列表（树形结构：任务 -> 工作项）
+  getSprintTasks: (projectId: string, sprintId: string, params?: { search?: string; inSprint?: boolean }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.search) searchParams.set("search", params.search)
+    if (params?.inSprint !== undefined) searchParams.set("inSprint", String(params.inSprint))
+    const query = searchParams.toString()
+    return request<SprintTaskItem[]>(`/projects/${projectId}/sprints/${sprintId}/workitems${query ? `?${query}` : ""}`)
+  },
+
+  // 批量移入工作项到迭代
+  addWorkItems: (projectId: string, sprintId: string, workItemIds: string[]) => {
+    return request<{ success: boolean; count: number; message: string }>(`/projects/${projectId}/sprints/${sprintId}/workitems`, {
+      method: "POST",
+      body: JSON.stringify({ workItemIds }),
+    })
+  },
+
+  // 批量移出工作项
+  removeWorkItems: (projectId: string, sprintId: string, workItemIds: string[]) => {
+    return request<{ success: boolean; count: number; message: string }>(`/projects/${projectId}/sprints/${sprintId}/workitems?ids=${workItemIds.join(",")}`, {
+      method: "DELETE",
+    })
+  },
 }
+
+// 迭代任务列表项类型（任务 -> 工作项树形结构）
+export interface SprintTaskItem {
+  id: string
+  title: string
+  type: string
+  priority: string
+  status: string
+  estimatedHours: number | null
+  actualHours: number | null
+  isInSprint: boolean
+  product: { id: string; name: string } | null
+  module: { id: string; name: string } | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+  creator: { id: string; name: string; avatar: string | null } | null
+  parent: { id: string; title: string; type: string } | null
+  createdAt: string | null
+  updatedAt: string | null
+  childCount: number
+  completedChildCount: number
+  children?: SprintTaskChild[]
+}
+
+// 迭代任务的子工作项类型
+export interface SprintTaskChild {
+  id: string
+  title: string
+  type: string
+  priority: string
+  status: string
+  estimatedHours: number | null
+  actualHours: number | null
+  module: { id: string; name: string } | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+}
+
+// 旧类型别名（向后兼容）
+export type SprintWorkItem = SprintTaskItem

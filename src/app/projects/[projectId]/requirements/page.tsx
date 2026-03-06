@@ -31,6 +31,7 @@ import {
   EyeOutlined,
   ImportOutlined,
   FileTextOutlined,
+  FileTextFilled,
   FilterOutlined,
   CloseOutlined,
   CopyOutlined,
@@ -43,9 +44,13 @@ import {
   AppstoreOutlined,
   FolderOutlined,
   CheckCircleOutlined,
+  RightOutlined,
+  ThunderboltFilled,
 } from "@ant-design/icons"
 import { ListPageLayout, type SidebarItem, type BatchAction } from "@/components/ui/ListPageLayout"
 import { RequirementDetailModal } from "@/components/requirement"
+import { TaskDetailModal } from "@/components/task"
+import { WorkItemDetailModal } from "@/components/workitem"
 import { 
   projectApi,
   projectRequirementApi, 
@@ -200,7 +205,7 @@ export default function ProjectRequirementsPage() {
   const [pageSize, setPageSize] = useState(20)
 
   // 导入弹窗状态
-  const [importProducts, setImportProducts] = useState<Product[]>([])
+  const [importProducts, setImportProducts] = useState<{ id: string; name: string; code: string }[]>([])
   const [importSelectedProduct, setImportSelectedProduct] = useState<string | null>(null)
   const [importRequirements, setImportRequirements] = useState<Requirement[]>([])
   const [importSelectedKeys, setImportSelectedKeys] = useState<React.Key[]>([])
@@ -209,6 +214,17 @@ export default function ProjectRequirementsPage() {
   // 需求详情弹窗状态
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null)
+
+  // 任务详情弹窗状态
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+
+  // 工作项详情弹窗状态
+  const [isWorkItemDetailOpen, setIsWorkItemDetailOpen] = useState(false)
+  const [selectedWorkItemId, setSelectedWorkItemId] = useState<string | null>(null)
+
+  // 展开行状态
+  const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([])
 
   // 表单
   const [form] = Form.useForm()
@@ -229,6 +245,30 @@ export default function ProjectRequirementsPage() {
   const handleCloseDetail = () => {
     setIsDetailOpen(false)
     setSelectedRequirementId(null)
+  }
+
+  // 打开任务详情
+  const handleOpenTaskDetail = (taskId: string) => {
+    setSelectedTaskId(taskId)
+    setIsTaskDetailOpen(true)
+  }
+
+  // 关闭任务详情
+  const handleCloseTaskDetail = () => {
+    setIsTaskDetailOpen(false)
+    setSelectedTaskId(null)
+  }
+
+  // 打开工作项详情
+  const handleOpenWorkItemDetail = (workItemId: string) => {
+    setSelectedWorkItemId(workItemId)
+    setIsWorkItemDetailOpen(true)
+  }
+
+  // 关闭工作项详情
+  const handleCloseWorkItemDetail = () => {
+    setIsWorkItemDetailOpen(false)
+    setSelectedWorkItemId(null)
   }
 
   // 加载项目详情
@@ -355,14 +395,15 @@ export default function ProjectRequirementsPage() {
     setIsImportOpen(true)
     setImportLoading(true)
     try {
-      const products = await productApi.getList()
-      setImportProducts(products)
-      // 如果项目有关联产品，默认选中第一个
+      // 只使用项目已关联的产品
       if (project?.products && project.products.length > 0) {
+        setImportProducts(project.products)
         setImportSelectedProduct(project.products[0].id)
         const reqs = await requirementApi.getList(project.products[0].id)
         // 显示所有需求，已导入的会有特殊标记
         setImportRequirements(reqs)
+      } else {
+        setImportProducts([])
       }
     } catch (error) {
       console.error("加载产品列表失败", error)
@@ -409,24 +450,78 @@ export default function ProjectRequirementsPage() {
     }
   }
 
-  // 表格列
-  const columns: TableProps<ProjectRequirement>["columns"] = [
+  // 树形表格行类型（需求或任务）
+  interface WorkItemRow {
+    id: string
+    type: 'REQUIREMENT' | 'TASK'
+    title: string
+    priority: string
+    status: string
+    moduleId: string | null
+    moduleName: string | null
+    productId: string | null
+    productName: string | null
+    sprintId: string | null
+    sprintName: string | null
+    creator: { id: string; name: string; avatar: string | null } | null
+    assignee: { id: string; name: string; avatar: string | null } | null
+    progress?: number
+    childCount?: number
+    estimatedHours?: number | null
+    children?: WorkItemRow[]
+  }
+
+  // 将需求数据转换为树形表格数据
+  const treeData: WorkItemRow[] = requirements.map(req => ({
+    id: req.id,
+    type: 'REQUIREMENT' as const,
+    title: req.title,
+    priority: req.priority,
+    status: req.status,
+    moduleId: req.moduleId,
+    moduleName: req.moduleName,
+    productId: req.productId,
+    productName: req.productName,
+    sprintId: req.sprintId,
+    sprintName: req.sprintName,
+    creator: req.creator,
+    assignee: req.assignee,
+    progress: req.progress,
+    childCount: req.childCount,
+    children: req.tasks?.map((task: any) => ({
+      id: task.id,
+      type: 'TASK' as const,
+      title: task.title,
+      priority: task.priority,
+      status: task.status,
+      moduleId: task.moduleId,
+      moduleName: task.moduleName,
+      productId: null,
+      productName: null,
+      sprintId: null,
+      sprintName: null,
+      creator: null,
+      assignee: task.assignee,
+      estimatedHours: task.estimatedHours,
+    })),
+  }))
+
+  // 树形表格列定义
+  const columns: TableProps<WorkItemRow>["columns"] = [
     {
       title: "编号",
       dataIndex: "id",
-      width: 100,
+      width: 120,
       fixed: 'left',
       render: (id: string) => (
         <Text 
           type="secondary" 
-          style={{ fontFamily: "monospace", cursor: "pointer" }}
-          onClick={() => handleCopyId(id)}
+          style={{ fontFamily: "monospace", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}
+          onClick={(e) => { e.stopPropagation(); handleCopyId(id) }}
           title="点击复制 ID"
         >
-          <Space size={4}>
-            {id.slice(-8)}
-            <CopyOutlined style={{ fontSize: 12, color: "#bfbfbf" }} />
-          </Space>
+          {id.slice(-8)}
+          <CopyOutlined style={{ fontSize: 12, color: "#bfbfbf" }} />
         </Text>
       ),
     },
@@ -434,86 +529,104 @@ export default function ProjectRequirementsPage() {
       title: "标题",
       dataIndex: "title",
       fixed: 'left',
-      render: (_: unknown, record: ProjectRequirement) => (
-        <Space direction="vertical" size={0}>
-          <Text 
-            style={{ 
-              cursor: "pointer", 
-              transition: "color 0.2s",
-            }}
-            onClick={() => handleOpenDetail(record.id)}
-            onMouseEnter={(e) => e.currentTarget.style.color = "#7c7cff"}
-            onMouseLeave={(e) => e.currentTarget.style.color = ""}
-          >
-            {record.title}
-          </Text>
-          {record.requirementType && (
-            <Tag color={getRequirementTypeInfo(record.requirementType)?.color} style={{ fontSize: 11 }}>
-              {getRequirementTypeInfo(record.requirementType)?.label}
-            </Tag>
-          )}
-        </Space>
-      ),
+      render: (_: unknown, record: WorkItemRow) => {
+        const isRequirement = record.type === 'REQUIREMENT'
+        const isTask = record.type === 'TASK'
+        const hasTasks = isRequirement && record.childCount && record.childCount > 0
+        const isExpanded = expandedRowKeys.includes(record.id)
+        
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* 展开图标 - 只有有任务的需求才显示 */}
+            {isRequirement && hasTasks ? (
+              <RightOutlined
+                style={{
+                  fontSize: 10,
+                  color: '#8c8c8c',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s',
+                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                  flexShrink: 0,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (isExpanded) {
+                    setExpandedRowKeys(expandedRowKeys.filter(k => k !== record.id))
+                  } else {
+                    setExpandedRowKeys([...expandedRowKeys, record.id])
+                  }
+                }}
+              />
+            ) : (
+              <span style={{ width: 10, flexShrink: 0 }} />
+            )}
+            {/* 任务行额外缩进 */}
+            {isTask && <span style={{ width: 8 }} />}
+            {/* 类型图标 */}
+            {isRequirement ? (
+              <FileTextFilled style={{ color: "#7c7cff", fontSize: 14, flexShrink: 0 }} />
+            ) : (
+              <ThunderboltFilled style={{ color: "#faad14", fontSize: 14, flexShrink: 0 }} />
+            )}
+            {/* 标题 */}
+            <Text 
+              style={{ cursor: "pointer", transition: "color 0.2s" }}
+              onClick={() => {
+                if (isRequirement) {
+                  handleOpenDetail(record.id)
+                } else {
+                  handleOpenTaskDetail(record.id)
+                }
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "#7c7cff"}
+              onMouseLeave={(e) => e.currentTarget.style.color = ""}
+            >
+              {record.title}
+            </Text>
+          </div>
+        )
+      },
     },
     {
       title: "来源产品",
       dataIndex: "productName",
       width: 120,
-      render: (name: string) => name || <Text type="secondary">-</Text>,
+      render: (name: string, record: WorkItemRow) => {
+        if (record.type === 'TASK') return <Text type="secondary">-</Text>
+        return name || <Text type="secondary">-</Text>
+      },
     },
     {
       title: "迭代",
       dataIndex: "sprintName",
       width: 100,
-      render: (name: string) => name || <Tag color="warning">待分配</Tag>,
+      render: (name: string, record: WorkItemRow) => {
+        if (record.type === 'TASK') return <Text type="secondary">-</Text>
+        return name || <Tag color="warning">待分配</Tag>
+      },
     },
     {
-      title: "进度",
-      dataIndex: "progress",
-      width: 120,
-      render: (progress: number, record: ProjectRequirement) => (
-        <Space>
-          <Progress 
-            percent={progress} 
-            size="small" 
-            style={{ width: 60 }}
-            strokeColor={{
-              '0%': '#22d3ee',
-              '100%': '#7c7cff',
-            }}
-          />
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {record.childCount > 0 ? `${record.childCount}项` : '-'}
-          </Text>
-        </Space>
-      ),
-    },
-    {
-      title: "创建人",
-      dataIndex: "creator",
-      width: 80,
-      render: (creator: { name: string }) => (
-        <Avatar size="small" style={{ background: "#a5b4fc" }}>
-          {creator?.name?.[0] || "?"}
-        </Avatar>
-      ),
+      title: "模块",
+      dataIndex: "moduleName",
+      width: 100,
+      render: (name: string) => name || <Text type="secondary">-</Text>,
     },
     {
       title: "负责人",
       dataIndex: "assignee",
       width: 80,
-      render: (assignee: { name: string } | null) => (
+      render: (assignee: { name: string; avatar: string | null } | null) => (
         assignee ? (
-          <Avatar size="small" style={{ background: "#c4b5fd" }}>
+          <Avatar size="small" src={assignee.avatar} style={{ background: "#c4b5fd" }}>
             {assignee.name?.[0] || "?"}
           </Avatar>
-        ) : "-"
+        ) : <Text type="secondary">-</Text>
       ),
     },
     {
       title: "优先级",
       dataIndex: "priority",
-      width: 80,
+      width: 70,
       fixed: 'right',
       render: (priority: string) => <Tag color={getPriorityColor(priority)}>{priority}</Tag>,
     },
@@ -531,22 +644,49 @@ export default function ProjectRequirementsPage() {
       title: "操作",
       width: 60,
       fixed: 'right',
-      render: (_: unknown, record: ProjectRequirement) => (
-        <Dropdown
-          menu={{
-            items: [
-              { key: "view", icon: <EyeOutlined />, label: "查看详情" },
-              { key: "edit", icon: <EditOutlined />, label: "编辑" },
-              { key: "moveSprint", icon: <RocketOutlined />, label: "移入迭代" },
-              { type: "divider" },
-              { key: "delete", icon: <DeleteOutlined />, label: "删除", danger: true, onClick: () => handleDelete(record) },
-            ],
-          }}
-          trigger={["click"]}
-        >
-          <Button type="text" icon={<MoreOutlined />} />
-        </Dropdown>
-      ),
+      render: (_: unknown, record: WorkItemRow) => {
+        const isRequirement = record.type === 'REQUIREMENT'
+        return (
+          <Dropdown
+            menu={{
+              items: [
+                { 
+                  key: "view", 
+                  icon: <EyeOutlined />, 
+                  label: "查看详情",
+                  onClick: () => {
+                    if (isRequirement) {
+                      handleOpenDetail(record.id)
+                    } else {
+                      handleOpenTaskDetail(record.id)
+                    }
+                  }
+                },
+                { key: "edit", icon: <EditOutlined />, label: "编辑" },
+                ...(isRequirement ? [
+                  { key: "moveSprint", icon: <RocketOutlined />, label: "移入迭代" },
+                ] : []),
+                { type: "divider" } as const,
+                { 
+                  key: "delete", 
+                  icon: <DeleteOutlined />, 
+                  label: "删除", 
+                  danger: true, 
+                  onClick: () => {
+                    if (isRequirement) {
+                      const req = requirements.find(r => r.id === record.id)
+                      if (req) handleDelete(req)
+                    }
+                  }
+                },
+              ],
+            }}
+            trigger={["click"]}
+          >
+            <Button type="text" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+          </Dropdown>
+        )
+      },
     },
   ]
 
@@ -760,10 +900,13 @@ export default function ProjectRequirementsPage() {
     )
   }
 
+  // 分页后的树形数据
+  const paginatedTreeData = treeData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
   return (
     <>
       <div style={{ height: "calc(100vh - 56px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <ListPageLayout<ProjectRequirement>
+        <ListPageLayout<WorkItemRow>
           showSidebar
           sidebar={{
             title: "产品模块",
@@ -776,7 +919,7 @@ export default function ProjectRequirementsPage() {
             title: "项目需求",
             icon: <UnorderedListOutlined style={{ fontSize: 14, color: "#7c7cff" }} />,
             columns: columns,
-            dataSource: requirements.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+            dataSource: paginatedTreeData,
             rowKey: "id",
             loading: tableLoading,
             searchPlaceholder: "搜索需求标题...",
@@ -787,7 +930,7 @@ export default function ProjectRequirementsPage() {
             pagination: {
               current: currentPage,
               pageSize: pageSize,
-              total: requirements.length,
+              total: treeData.length,
               onChange: (page, size) => {
                 setCurrentPage(page)
                 setPageSize(size)
@@ -797,6 +940,12 @@ export default function ProjectRequirementsPage() {
             rowSelection: {
               selectedRowKeys,
               onChange: setSelectedRowKeys,
+            },
+            expandable: {
+              expandedRowKeys,
+              onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as React.Key[]),
+              indentSize: 0,
+              expandIcon: () => null,
             },
           }}
         />
@@ -937,8 +1086,8 @@ export default function ProjectRequirementsPage() {
                   },
                 },
               ]}
-              pagination={{ pageSize: 10 }}
-              scroll={{ y: 300 }}
+              pagination={false}
+              scroll={{ y: 400 }}
               locale={{ emptyText: <Empty description="该产品暂无需求" /> }}
             />
           )}
@@ -1242,6 +1391,24 @@ export default function ProjectRequirementsPage() {
         onClose={handleCloseDetail}
         defaultProjectId={projectId}
         sprints={project?.sprints.map(s => ({ value: s.id, label: s.name })) || []}
+        onTaskClick={handleOpenTaskDetail}
+        onSuccess={() => loadRequirements()}
+      />
+
+      {/* 任务详情弹窗 */}
+      <TaskDetailModal
+        open={isTaskDetailOpen}
+        taskId={selectedTaskId}
+        onClose={handleCloseTaskDetail}
+        onWorkItemClick={handleOpenWorkItemDetail}
+        onSuccess={() => loadRequirements()}
+      />
+
+      {/* 工作项详情弹窗 */}
+      <WorkItemDetailModal
+        open={isWorkItemDetailOpen}
+        workItemId={selectedWorkItemId}
+        onClose={handleCloseWorkItemDetail}
         onSuccess={() => loadRequirements()}
       />
     </>
