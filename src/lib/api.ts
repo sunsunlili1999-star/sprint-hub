@@ -635,3 +635,347 @@ export interface SprintTaskChild {
 
 // 旧类型别名（向后兼容）
 export type SprintWorkItem = SprintTaskItem
+
+// ==================== 迭代时间轴 API ====================
+
+// 时间轴工作项基础类型
+export interface TimelineItemBase {
+  id: string
+  title: string
+  type: string
+  priority: string
+  status: string
+  plannedStartDate: string | null
+  plannedEndDate: string | null
+  actualStartDate: string | null
+  actualEndDate: string | null
+  estimatedHours: number | null
+  actualHours: number | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+  creator: { id: string; name: string; avatar: string | null } | null
+  module: { id: string; name: string } | null
+  parentId: string | null
+  childCount: number
+  completedChildCount: number
+  progress: number
+  createdAt: string
+  updatedAt: string
+}
+
+// 树形结构项
+export interface TimelineTreeItem extends TimelineItemBase {
+  level: number
+  children?: TimelineTreeItem[]
+}
+
+// 展平后的项（用于渲染）
+export interface TimelineFlatItem extends TimelineItemBase {
+  level: number
+  hasChildren: boolean
+  isLastChild: boolean
+  parentIds: string[]
+}
+
+// 时间轴统计
+export interface TimelineStats {
+  totalItems: number
+  completedItems: number
+  inProgressItems: number
+  notStartedItems: number
+  totalEstimatedHours: number
+  totalActualHours: number
+  requirementCount: number
+  taskCount: number
+  workItemCount: number
+}
+
+// 时间轴响应
+export interface SprintTimelineResponse {
+  sprint: {
+    id: string
+    name: string
+    status: string
+    goal: string | null
+    startDate: string
+    endDate: string
+  }
+  stats: TimelineStats
+  assignees: { id: string; name: string; avatar: string | null }[]
+  treeData: TimelineTreeItem[]
+  flatData: TimelineFlatItem[]
+}
+
+export const sprintTimelineApi = {
+  // 获取迭代时间轴数据
+  getTimeline: (projectId: string, sprintId: string) => {
+    return request<SprintTimelineResponse>(`/projects/${projectId}/sprints/${sprintId}/timeline`)
+  },
+}
+
+// ==================== 迭代依赖关系 API ====================
+
+// 依赖图节点类型
+export interface DependencyNode {
+  id: string
+  title: string
+  type: string
+  priority: string
+  status: string
+  estimatedHours: number | null
+  actualHours: number | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+  module: { id: string; name: string } | null
+  parent: { id: string; title: string; type: string } | null
+  dependencyCount: number
+  dependentCount: number
+  isBlocked: boolean
+  isBlocking: boolean
+}
+
+// 外部依赖节点
+export interface ExternalDependencyNode {
+  id: string
+  title: string
+  type: string
+  priority: string
+  status: string
+  estimatedHours: number | null
+  actualHours: number | null
+  assignee: { id: string; name: string; avatar: string | null } | null
+  sprint: { id: string; name: string } | null
+  isExternal: true
+}
+
+// 依赖边类型
+export interface DependencyEdge {
+  id: string
+  source: string
+  target: string
+  type: string
+  sourceInSprint: boolean
+  targetInSprint: boolean
+  isBlocking: boolean
+}
+
+// 依赖统计
+export interface DependencyStats {
+  totalNodes: number
+  totalEdges: number
+  blockedItems: number
+  blockingItems: number
+  externalDependencies: number
+  requirementCount: number
+  taskCount: number
+  bugCount: number
+  maxDependencyDepth: number
+}
+
+// 依赖关系响应
+export interface SprintDependencyResponse {
+  sprint: {
+    id: string
+    name: string
+    status: string
+    startDate: string
+    endDate: string
+  }
+  stats: DependencyStats
+  nodes: DependencyNode[]
+  externalNodes: ExternalDependencyNode[]
+  edges: DependencyEdge[]
+  cycles: string[][]
+}
+
+export const sprintDependencyApi = {
+  // 获取迭代依赖关系数据
+  getDependencies: (projectId: string, sprintId: string) => {
+    return request<SprintDependencyResponse>(`/projects/${projectId}/sprints/${sprintId}/dependencies`)
+  },
+}
+
+// ==================== 发布管理 API ====================
+
+export interface ReleaseListItem {
+  id: string
+  name: string
+  description: string | null
+  plannedDate: string
+  actualDate: string | null
+  status: string
+  riskLevel: string
+  riskDescription: string | null
+  aiRiskScore: number | null
+  project: { id: string; name: string; code: string }
+  owner: { id: string; name: string; avatar: string | null }
+  creator: { id: string; name: string; avatar: string | null }
+  itemCount: number
+  completedItemCount: number
+  progress: number
+  logCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ReleaseItem {
+  id: string
+  title: string
+  type: string
+  priority: string
+  description: string | null
+  devStatus: string
+  testStatus: string
+  verifyStatus: string
+  currentPhase: string
+  plannedStartDate: string | null
+  plannedEndDate: string | null
+  actualStartDate: string | null
+  actualEndDate: string | null
+  estimatedHours: number | null
+  actualHours: number | null
+  devOwner: { id: string; name: string; avatar: string | null } | null
+  testOwner: { id: string; name: string; avatar: string | null } | null
+  product: { id: string; name: string } | null
+  module: { id: string; name: string } | null
+  sprint: { id: string; name: string } | null
+  addedAt: string
+}
+
+export interface ReleaseLog {
+  id: string
+  action: string
+  description: string | null
+  snapshot: Record<string, unknown> | null
+  createdBy: { id: string; name: string; avatar: string | null }
+  createdAt: string
+}
+
+export interface ReleaseStats {
+  totalItems: number
+  completedItems: number
+  inProgressItems: number
+  notStartedItems: number
+  progress: number
+  byStatus: {
+    notStarted: number
+    inDevelopment: number
+    devCompleted: number
+    inTesting: number
+    testCompleted: number
+    verified: number
+  }
+  byPriority: {
+    P0: number
+    P1: number
+    P2: number
+    P3: number
+    P4: number
+  }
+  totalEstimatedHours: number
+  totalActualHours: number
+}
+
+export interface ReleaseDetail {
+  id: string
+  name: string
+  description: string | null
+  plannedDate: string
+  actualDate: string | null
+  status: string
+  riskLevel: string
+  riskDescription: string | null
+  aiRiskScore: number | null
+  aiRiskAnalysis: {
+    score: number
+    level: string
+    factors: { name: string; impact: number; description: string }[]
+    suggestions: string[]
+    predictedDelay: number
+  } | null
+  project: { id: string; name: string; code: string }
+  owner: { id: string; name: string; avatar: string | null; email?: string }
+  creator: { id: string; name: string; avatar: string | null }
+  createdAt: string
+  updatedAt: string
+  stats: ReleaseStats
+  items: ReleaseItem[]
+  logs: ReleaseLog[]
+}
+
+export const releaseApi = {
+  // 获取发布列表
+  getList: (params?: { search?: string; projectId?: string; status?: string }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.search) searchParams.set("search", params.search)
+    if (params?.projectId) searchParams.set("projectId", params.projectId)
+    if (params?.status) searchParams.set("status", params.status)
+    const query = searchParams.toString()
+    return request<ReleaseListItem[]>(`/releases${query ? `?${query}` : ""}`)
+  },
+
+  // 获取发布详情
+  getDetail: (releaseId: string) => {
+    return request<ReleaseDetail>(`/releases/${releaseId}`)
+  },
+
+  // 创建发布
+  create: (data: {
+    name: string
+    description?: string
+    projectId: string
+    plannedDate: string
+    ownerId?: string
+    requirementIds?: string[]
+    riskLevel?: string
+    riskDescription?: string
+  }) => {
+    return request<ReleaseListItem>("/releases", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  },
+
+  // 更新发布
+  update: (releaseId: string, data: {
+    name?: string
+    description?: string
+    plannedDate?: string
+    ownerId?: string
+    riskLevel?: string
+    riskDescription?: string
+    status?: string
+  }) => {
+    return request<ReleaseListItem>(`/releases/${releaseId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  },
+
+  // 删除发布
+  delete: (releaseId: string) => {
+    return request<{ success: boolean }>(`/releases/${releaseId}`, {
+      method: "DELETE",
+    })
+  },
+
+  // 添加需求到发布
+  addItems: (releaseId: string, workItemIds: string[]) => {
+    return request<{ success: boolean; addedCount: number; message: string }>(`/releases/${releaseId}/items`, {
+      method: "POST",
+      body: JSON.stringify({ workItemIds }),
+    })
+  },
+
+  // 从发布移除需求
+  removeItems: (releaseId: string, workItemIds: string[]) => {
+    return request<{ success: boolean; removedCount: number; message: string }>(`/releases/${releaseId}/items?ids=${workItemIds.join(",")}`, {
+      method: "DELETE",
+    })
+  },
+
+  // 确认发布
+  confirm: (releaseId: string) => {
+    return request<{ success: boolean; message: string; snapshot: Record<string, unknown> }>(`/releases/${releaseId}/confirm`, {
+      method: "POST",
+    })
+  },
+}

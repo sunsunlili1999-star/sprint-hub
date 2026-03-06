@@ -278,8 +278,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         version: {
           select: { id: true, name: true },
         },
+        // 获取子任务详细信息
         children: {
-          select: { id: true, devStatus: true },
+          where: { type: "TASK" },
+          select: {
+            id: true,
+            title: true,
+            priority: true,
+            devStatus: true,
+            estimatedHours: true,
+            moduleId: true,
+            module: {
+              select: { id: true, name: true },
+            },
+            devOwner: {
+              select: { id: true, name: true, avatar: true },
+            },
+          },
+          orderBy: [
+            { priority: "asc" },
+            { createdAt: "asc" },
+          ],
         },
       },
       orderBy,
@@ -312,6 +331,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         childCount: totalChildren,
         createdAt: item.createdAt.toISOString().split("T")[0],
         updatedAt: item.updatedAt.toISOString().split("T")[0],
+        // 子任务列表
+        tasks: item.children.map(task => ({
+          id: task.id,
+          title: task.title,
+          priority: task.priority,
+          status: task.devStatus,
+          estimatedHours: task.estimatedHours,
+          moduleId: task.moduleId,
+          moduleName: task.module?.name || null,
+          assignee: task.devOwner,
+        })),
       }
     })
 

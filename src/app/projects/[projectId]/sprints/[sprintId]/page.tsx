@@ -46,6 +46,7 @@ import {
   HourglassOutlined,
   FireOutlined,
   UserOutlined,
+  ApartmentOutlined,
 } from "@ant-design/icons"
 import dayjs from "dayjs"
 import { 
@@ -56,6 +57,8 @@ import {
   type BurndownDataPoint,
 } from "@/lib/api"
 import { SprintWorkItemsTab } from "./components/SprintWorkItemsTab"
+import { SprintTimelineTab } from "./components/SprintTimelineTab"
+import { SprintDependencyTab } from "./components/SprintDependencyTab"
 
 const { Text, Title, Paragraph } = Typography
 const { RangePicker } = DatePicker
@@ -73,6 +76,7 @@ const tabs = [
   { key: "overview", label: "概览", icon: <FundProjectionScreenOutlined /> },
   { key: "workitems", label: "工作项", icon: <BarsOutlined /> },
   { key: "timeline", label: "时间轴", icon: <FieldTimeOutlined /> },
+  { key: "dependencies", label: "依赖", icon: <ApartmentOutlined /> },
 ]
 
 // 简易燃尽图组件
@@ -538,10 +542,10 @@ export default function SprintDetailPage() {
       {/* 内容区 */}
       <div style={{ 
         flex: 1, 
-        overflow: activeTab === "workitems" ? "hidden" : "auto", 
-        padding: activeTab === "workitems" ? 0 : 24, 
-        background: "#f8fafc",
-        display: activeTab === "workitems" ? "flex" : "block",
+        overflow: (activeTab === "workitems" || activeTab === "timeline" || activeTab === "dependencies") ? "hidden" : "auto", 
+        padding: (activeTab === "workitems" || activeTab === "timeline" || activeTab === "dependencies") ? 0 : 24, 
+        background: (activeTab === "timeline" || activeTab === "dependencies") ? "#fff" : "#f8fafc",
+        display: (activeTab === "workitems" || activeTab === "timeline" || activeTab === "dependencies") ? "flex" : "block",
         flexDirection: "column",
       }}>
         {activeTab === "overview" && (
@@ -782,15 +786,11 @@ export default function SprintDetailPage() {
         )}
 
         {activeTab === "timeline" && (
-          <div style={{ padding: 24 }}>
-            <Card>
-              <div style={{ textAlign: "center", padding: "48px 0" }}>
-                <FieldTimeOutlined style={{ fontSize: 48, color: "#e2e8f0", marginBottom: 16 }} />
-                <br />
-                <Text type="secondary">时间轴视图（开发中...）</Text>
-              </div>
-            </Card>
-          </div>
+          <SprintTimelineTab projectId={projectId} sprintId={sprintId} />
+        )}
+
+        {activeTab === "dependencies" && (
+          <SprintDependencyTab projectId={projectId} sprintId={sprintId} />
         )}
       </div>
 

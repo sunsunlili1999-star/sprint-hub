@@ -77,6 +77,8 @@ interface ContentConfig<T> {
     selectedRowKeys: React.Key[]
     onChange: (keys: React.Key[]) => void
   }
+  // 展开行
+  expandable?: TableProps<T>["expandable"]
 }
 
 interface ListPageLayoutProps<T> {
@@ -197,6 +199,7 @@ export function ListPageLayout<T extends object>({
     pagination,
     batchActions,
     rowSelection,
+    expandable,
   } = content
 
   const selectedCount = rowSelection?.selectedRowKeys?.length || 0
@@ -308,6 +311,7 @@ export function ListPageLayout<T extends object>({
               onChange: (keys) => rowSelection.onChange(keys),
               columnWidth: 48,
             } : undefined}
+            expandable={expandable}
           />
         </div>
 

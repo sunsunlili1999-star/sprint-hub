@@ -1,4 +1,4 @@
-import { PrismaClient, ProjectStatus, SprintStatus, WorkItemType, Priority, Phase, ProjectRole } from '@prisma/client'
+import { PrismaClient, ProjectStatus, SprintStatus, WorkItemType, Priority, Phase, ProjectRole, RequirementType } from '@prisma/client'
 
 // 推荐系统项目数据
 export async function seedRecommendSystemProject(prisma: PrismaClient) {
@@ -239,12 +239,279 @@ export async function seedRecommendSystemProject(prisma: PrismaClient) {
     },
   })
 
+  // ==================== Sprint 2 - 标签管理功能 ====================
+  // 创建标签管理功能需求（属于标签平台产品）
+  const tagManagementReq = await prisma.workItem.create({
+    data: {
+      id: 'req-tag-management',
+      title: '标签管理功能',
+      description: '实现标签平台的核心标签管理功能，包括标签列表主体分类、查询列表、新建标签-数据表映射等功能。为推荐系统提供标签数据支撑。',
+      type: WorkItemType.REQUIREMENT,
+      requirementType: RequirementType.FEATURE,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'IN_PROGRESS',
+      projectId: project.id,
+      productId: 'product-tag-platform',
+      moduleId: 'module-tag-list',
+      sprintId: sprints[1].id,  // Sprint 2 - 推荐算法
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 80,
+      plannedStartDate: new Date('2026-02-01'),
+      plannedEndDate: new Date('2026-02-14'),
+    },
+  })
+
+  // 创建任务1：实现标签列表主体分类功能
+  const task1 = await prisma.workItem.create({
+    data: {
+      id: 'task-tag-category',
+      title: '实现标签列表主体分类功能',
+      description: '实现标签按主体类型（用户、设备、订单等）进行分类展示，支持分类树形结构。',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'IN_PROGRESS',
+      projectId: project.id,
+      productId: 'product-tag-platform',
+      moduleId: 'module-tag-list',
+      sprintId: sprints[1].id,
+      parentId: tagManagementReq.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 24,
+      plannedStartDate: new Date('2026-02-01'),
+      plannedEndDate: new Date('2026-02-05'),
+    },
+  })
+
+  // 任务1的工作项
+  await prisma.workItem.createMany({
+    data: [
+      {
+        id: 'workitem-tag-category-page',
+        title: '主体分类页面开发',
+        description: '开发主体分类的前端页面，包括分类树形组件、分类筛选器等。',
+        type: WorkItemType.TASK,
+        priority: Priority.P1,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'COMPLETED',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task1.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-admin',
+        estimatedHours: 8,
+        actualHours: 7,
+      },
+      {
+        id: 'workitem-tag-category-api',
+        title: '主体分类接口开发',
+        description: '开发主体分类的后端API，包括分类列表、分类详情、分类CRUD等接口。',
+        type: WorkItemType.TASK,
+        priority: Priority.P1,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'COMPLETED',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task1.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-lisi',  // 后端任务分配给李四
+        estimatedHours: 8,
+        actualHours: 10,
+      },
+      {
+        id: 'workitem-tag-category-debug',
+        title: '主体分类接口联调',
+        description: '前后端接口联调，确保分类功能正常工作。',
+        type: WorkItemType.TASK,
+        priority: Priority.P1,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'IN_PROGRESS',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task1.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-admin',
+        estimatedHours: 4,
+      },
+    ],
+  })
+
+  // 创建任务2：实现查询列表功能
+  const task2 = await prisma.workItem.create({
+    data: {
+      id: 'task-tag-query-list',
+      title: '实现查询列表功能',
+      description: '实现标签查询列表功能，支持多条件筛选、排序、分页。',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'IN_PROGRESS',
+      projectId: project.id,
+      productId: 'product-tag-platform',
+      moduleId: 'module-tag-list',
+      sprintId: sprints[1].id,
+      parentId: tagManagementReq.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 28,
+      plannedStartDate: new Date('2026-02-03'),
+      plannedEndDate: new Date('2026-02-08'),
+    },
+  })
+
+  // 任务2的工作项
+  await prisma.workItem.createMany({
+    data: [
+      {
+        id: 'workitem-tag-query-page',
+        title: '查询列表页面开发',
+        description: '开发标签查询列表的前端页面，包括筛选表单、数据表格、分页组件等。',
+        type: WorkItemType.TASK,
+        priority: Priority.P1,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'IN_PROGRESS',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task2.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-admin',
+        estimatedHours: 12,
+      },
+      {
+        id: 'workitem-tag-query-api',
+        title: '查询列表接口开发',
+        description: '开发标签查询列表的后端API，支持多条件筛选、排序、分页查询。',
+        type: WorkItemType.TASK,
+        priority: Priority.P1,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'NOT_STARTED',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task2.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-lisi',  // 后端任务分配给李四
+        estimatedHours: 10,
+      },
+      {
+        id: 'workitem-tag-query-debug',
+        title: '查询列表接口联调',
+        description: '前后端接口联调，确保列表筛选、排序、分页功能正常工作。',
+        type: WorkItemType.TASK,
+        priority: Priority.P1,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'NOT_STARTED',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task2.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-admin',
+        estimatedHours: 4,
+      },
+    ],
+  })
+
+  // 创建任务3：实现新建标签-数据表映射功能
+  const task3 = await prisma.workItem.create({
+    data: {
+      id: 'task-tag-mapping',
+      title: '实现新建标签-数据表映射功能',
+      description: '实现新建标签时与数据表的映射配置，支持选择数据源、配置字段映射关系。',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      productId: 'product-tag-platform',
+      moduleId: 'module-tag-list',
+      sprintId: sprints[1].id,
+      parentId: tagManagementReq.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 32,
+      plannedStartDate: new Date('2026-02-07'),
+      plannedEndDate: new Date('2026-02-14'),
+    },
+  })
+
+  // 任务3的工作项
+  await prisma.workItem.createMany({
+    data: [
+      {
+        id: 'workitem-tag-mapping-page',
+        title: '标签映射配置页面开发',
+        description: '开发新建标签时的数据表映射配置页面，包括数据源选择、字段拖拽映射组件。',
+        type: WorkItemType.TASK,
+        priority: Priority.P0,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'NOT_STARTED',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task3.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-admin',
+        estimatedHours: 16,
+      },
+      {
+        id: 'workitem-tag-mapping-api',
+        title: '标签映射配置接口开发',
+        description: '开发标签与数据表映射关系的后端API，包括数据源列表、表结构获取、映射保存等接口。',
+        type: WorkItemType.TASK,
+        priority: Priority.P0,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'NOT_STARTED',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task3.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-lisi',  // 后端任务分配给李四
+        estimatedHours: 12,
+      },
+      {
+        id: 'workitem-tag-mapping-debug',
+        title: '标签映射配置接口联调',
+        description: '前后端接口联调，确保映射配置功能完整可用。',
+        type: WorkItemType.TASK,
+        priority: Priority.P0,
+        currentPhase: Phase.DEVELOPMENT,
+        devStatus: 'NOT_STARTED',
+        projectId: project.id,
+        productId: 'product-tag-platform',
+        moduleId: 'module-tag-list',
+        sprintId: sprints[1].id,
+        parentId: task3.id,
+        creatorId: 'user-admin',
+        devOwnerId: 'user-admin',
+        estimatedHours: 4,
+      },
+    ],
+  })
+
   console.log(`  已创建项目: ${project.name}`)
   console.log(`  已关联 2 个产品（小康App、标签平台）`)
   console.log(`  已添加 ${6} 个成员`)
   console.log(`  已创建 ${sprints.length} 个迭代`)
-  console.log(`  已创建 ${requirements.length} 个需求`)
-  console.log(`  已创建 ${tasks.length} 个任务`)
+  console.log(`  已创建 ${requirements.length + 1} 个需求`)
+  console.log(`  已创建 ${tasks.length + 3} 个任务`)
+  console.log(`  已创建 9 个工作项（标签管理功能）`)
   console.log(`  已同步小康App的 2 个需求到项目`)
 
   return project

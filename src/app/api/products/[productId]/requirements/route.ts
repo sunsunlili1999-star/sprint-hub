@@ -202,6 +202,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
     
     // 构建基础 where 条件
+    // 模块筛选逻辑：筛选有属于该模块任务的需求
     const baseWhere: Prisma.WorkItemWhereInput = {
       productId,
       type: "REQUIREMENT",
@@ -211,8 +212,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           { description: { contains: search, mode: "insensitive" } },
         ],
       }),
-      ...(moduleId && moduleId !== "all" && moduleId !== "unassigned" && { moduleId }),
-      ...(moduleId === "unassigned" && { moduleId: null }),
+      // 模块筛选：筛选有属于该模块任务的需求
+      ...(moduleId && moduleId !== "all" && moduleId !== "unassigned" && {
+        children: {
+          some: {
+            type: "TASK",
+            moduleId: moduleId,
+          },
+        },
+      }),
+      ...(moduleId === "unassigned" && {
+        OR: [
+          // 需求自身没有模块
+          { moduleId: null },
+          // 或者需求下有未分配模块的任务
+          { children: { some: { type: "TASK", moduleId: null } } },
+        ],
+      }),
     }
     
     // 构建高级筛选 where 条件
@@ -225,6 +241,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // 构建排序条件
     const orderBy = buildOrderBy(sorts)
+
+    // 构建子任务查询条件（根据模块筛选）
+    const childrenWhere: Prisma.WorkItemWhereInput = {
+      type: "TASK",
+      ...(moduleId && moduleId !== "all" && moduleId !== "unassigned" && { moduleId }),
+      ...(moduleId === "unassigned" && { moduleId: null }),
+    }
 
     const requirements = await prisma.workItem.findMany({
       where: finalWhere,
@@ -243,6 +266,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
         module: {
           select: { id: true, name: true },
+        },
+        // 包含子任务（TASK 类型，按模块筛选）
+        children: {
+          where: childrenWhere,
+          select: {
+            id: true,
+            title: true,
+            priority: true,
+            devStatus: true,
+            moduleId: true,
+            module: { select: { id: true, name: true } },
+            devOwner: { select: { id: true, name: true, avatar: true } },
+            estimatedHours: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
+        _count: {
+          select: { children: { where: childrenWhere } },
         },
       },
       orderBy,
@@ -263,6 +304,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       assignee: item.devOwner,
       createdAt: item.createdAt.toISOString().split("T")[0],
       updatedAt: item.updatedAt.toISOString().split("T")[0],
+      // 子任务
+      tasks: item.children.map((child) => ({
+        id: child.id,
+        title: child.title,
+        priority: child.priority,
+        status: child.devStatus,
+        moduleId: child.moduleId,
+        moduleName: child.module?.name || null,
+        assignee: child.devOwner,
+        estimatedHours: child.estimatedHours,
+      })),
+      taskCount: item._count.children,
     }))
 
     return NextResponse.json(result)
