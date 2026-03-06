@@ -16,8 +16,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         creator: {
           select: { id: true, name: true, avatar: true },
         },
-        product: {
-          select: { id: true, name: true, code: true },
+        projectProducts: {
+          include: {
+            product: {
+              select: { id: true, name: true, code: true },
+            },
+          },
         },
         members: {
           include: {
@@ -53,7 +57,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       starred: project.starred,
       startDate: project.startDate?.toISOString().split("T")[0] || null,
       endDate: project.endDate?.toISOString().split("T")[0] || null,
-      product: project.product,
+      products: project.projectProducts.map(pp => pp.product),  // 多个产品
       creator: project.creator,
       members: project.members.map(m => ({
         ...m.user,
@@ -84,30 +88,67 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { projectId } = await params
     const body = await request.json()
-    const { name, code, description, productId, startDate, endDate, status } = body
+    const { name, code, description, productIds, startDate, endDate, status } = body
 
-    const project = await prisma.project.update({
-      where: { id: projectId },
-      data: {
-        ...(name && { name }),
-        ...(code && { code }),
-        ...(description !== undefined && { description }),
-        ...(productId !== undefined && { productId }),
-        ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
-        ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
-        ...(status && { status }),
-      },
-      include: {
-        creator: {
-          select: { id: true, name: true, avatar: true },
+    // 使用事务更新项目和产品关联
+    const project = await prisma.$transaction(async (tx) => {
+      // 更新项目基本信息
+      const updatedProject = await tx.project.update({
+        where: { id: projectId },
+        data: {
+          ...(name && { name }),
+          ...(code && { code }),
+          ...(description !== undefined && { description }),
+          ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
+          ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
+          ...(status && { status }),
         },
-        product: {
-          select: { id: true, name: true, code: true },
+      })
+
+      // 如果传入了 productIds，更新产品关联
+      if (productIds !== undefined) {
+        // 删除旧的关联
+        await tx.projectProduct.deleteMany({
+          where: { projectId },
+        })
+
+        // 创建新的关联
+        if (productIds && productIds.length > 0) {
+          await tx.projectProduct.createMany({
+            data: productIds.map((productId: string) => ({
+              projectId,
+              productId,
+            })),
+          })
+        }
+      }
+
+      // 返回更新后的项目（含产品关联）
+      return tx.project.findUnique({
+        where: { id: projectId },
+        include: {
+          creator: {
+            select: { id: true, name: true, avatar: true },
+          },
+          projectProducts: {
+            include: {
+              product: {
+                select: { id: true, name: true, code: true },
+              },
+            },
+          },
         },
-      },
+      })
     })
 
-    return NextResponse.json(project)
+    if (!project) {
+      return NextResponse.json({ error: "项目不存在" }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      ...project,
+      products: project.projectProducts.map(pp => pp.product),
+    })
   } catch (error) {
     console.error("更新项目失败:", error)
     return NextResponse.json({ error: "更新项目失败" }, { status: 500 })

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { Prisma } from "@prisma/client"
+import { Prisma, Priority } from "@prisma/client"
 import { getCurrentUserId } from "@/lib/auth"
 
 interface RouteParams {
@@ -68,10 +68,10 @@ function buildFilterCondition(condition: FilterCondition): Prisma.WorkItemWhereI
       break
     case "priority":
       switch (operator) {
-        case "in": return { priority: { in: arrValue } }
-        case "notIn": return { priority: { notIn: arrValue } }
-        case "equals": return { priority: strValue }
-        case "notEquals": return { NOT: { priority: strValue } }
+        case "in": return { priority: { in: arrValue as Priority[] } }
+        case "notIn": return { priority: { notIn: arrValue as Priority[] } }
+        case "equals": return { priority: strValue as Priority }
+        case "notEquals": return { NOT: { priority: strValue as Priority } }
       }
       break
     case "creatorName":

@@ -72,7 +72,7 @@ export async function seedTagPlatform(prisma: PrismaClient) {
         description: '支持多级标签分类体系的创建和管理，分类可包含名称、编码、描述、排序等属性，支持分类的新增、编辑、删除、排序操作。',
         type: WorkItemType.REQUIREMENT,
         priority: Priority.P1,
-        currentPhase: Phase.COMPLETED,
+        currentPhase: undefined, // 已完成
         devStatus: 'COMPLETED',
         testStatus: 'COMPLETED',
         productId: product.id,
@@ -160,7 +160,7 @@ export async function seedTagPlatform(prisma: PrismaClient) {
         description: '支持定义标签主体类型（如用户、患者、机构等），配置主体的唯一标识字段和属性字段。',
         type: WorkItemType.REQUIREMENT,
         priority: Priority.P1,
-        currentPhase: Phase.COMPLETED,
+        currentPhase: undefined, // 已完成
         devStatus: 'COMPLETED',
         testStatus: 'COMPLETED',
         productId: product.id,

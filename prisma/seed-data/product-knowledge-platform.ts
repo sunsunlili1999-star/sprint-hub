@@ -114,7 +114,7 @@ export async function seedKnowledgePlatform(prisma: PrismaClient) {
         description: '支持PDF、Word格式的临床指南文献导入，自动提取文档结构和关键内容。',
         type: WorkItemType.REQUIREMENT,
         priority: Priority.P1,
-        currentPhase: Phase.COMPLETED,
+        currentPhase: undefined, // 已完成
         devStatus: 'COMPLETED',
         testStatus: 'COMPLETED',
         productId: product.id,
@@ -145,7 +145,7 @@ export async function seedKnowledgePlatform(prisma: PrismaClient) {
         description: '实现指南文献的全文检索功能，支持关键词搜索、高级检索、检索结果高亮显示。',
         type: WorkItemType.REQUIREMENT,
         priority: Priority.P1,
-        currentPhase: Phase.COMPLETED,
+        currentPhase: undefined, // 已完成
         devStatus: 'COMPLETED',
         testStatus: 'COMPLETED',
         productId: product.id,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@ant-design/v5-patch-for-react-19";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
@@ -40,8 +41,8 @@ export default function RootLayout({
                     colorPrimaryActive: "#6366f1",
                   },
                   Menu: {
-                    colorItemBgSelected: "rgba(124, 124, 255, 0.1)",
-                    colorItemTextSelected: "#7c7cff",
+                    itemSelectedBg: "rgba(124, 124, 255, 0.1)",
+                    itemSelectedColor: "#7c7cff",
                     // dark 模式菜单样式
                     darkItemBg: "#242c40",
                     darkSubMenuItemBg: "#242c40",

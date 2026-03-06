@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { productId } = await params
 
-    const product = await prisma.product.findUnique({
+    const product = await (prisma as any).product.findUnique({
       where: { id: productId },
       include: {
         owner: {
@@ -60,6 +60,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           },
           orderBy: { createdAt: "desc" },
         },
+        // 关联的项目（通过 projectProducts 中间表）
+        projectProducts: {
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                status: true,
+                startDate: true,
+                endDate: true,
+              },
+            },
+          },
+        },
         _count: {
           select: { workItems: true },
         },
@@ -81,20 +96,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       owner: product.owner,
       creator: product.creator,
       createdAt: product.createdAt.toISOString().split("T")[0],
-      modules: product.modules.map((mod) => ({
+      modules: product.modules.map((mod: any) => ({
         id: mod.id,
         name: mod.name,
         description: mod.description,
         order: mod.order,
         requirementCount: mod._count.workItems,
-        children: mod.children.map((child) => ({
+        children: mod.children.map((child: any) => ({
           id: child.id,
           name: child.name,
           description: child.description,
           order: child.order,
         })),
       })),
-      documents: product.documents.map((doc) => ({
+      documents: product.documents.map((doc: any) => ({
         id: doc.id,
         name: doc.name,
         fileName: doc.fileName,
@@ -103,7 +118,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         uploadedBy: doc.uploader,
         uploadedAt: doc.createdAt.toISOString().split("T")[0],
       })),
-      requirements: product.workItems.map((item) => ({
+      requirements: product.workItems.map((item: any) => ({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -118,6 +133,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         assignee: item.devOwner,
         createdAt: item.createdAt.toISOString().split("T")[0],
         updatedAt: item.updatedAt.toISOString().split("T")[0],
+      })),
+      // 关联的项目
+      projects: product.projectProducts.map((pp: any) => ({
+        id: pp.project.id,
+        name: pp.project.name,
+        code: pp.project.code,
+        status: pp.project.status,
+        startDate: pp.project.startDate?.toISOString().split("T")[0] || null,
+        endDate: pp.project.endDate?.toISOString().split("T")[0] || null,
       })),
       requirementCount: product._count.workItems,
     }

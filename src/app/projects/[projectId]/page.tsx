@@ -198,8 +198,12 @@ export default function ProjectOverviewPage() {
                 <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 4 }}>
                   关联产品
                 </Text>
-                {project.product ? (
-                  <Tag color="purple">{project.product.name}</Tag>
+                {project.products && project.products.length > 0 ? (
+                  <Space wrap>
+                    {project.products.map(p => (
+                      <Tag key={p.id} color="purple">{p.name}</Tag>
+                    ))}
+                  </Space>
                 ) : (
                   <Text type="secondary">未关联</Text>
                 )}

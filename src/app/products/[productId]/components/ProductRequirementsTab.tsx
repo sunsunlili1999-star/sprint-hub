@@ -140,17 +140,18 @@ interface ProductRequirementsTabProps {
 
 export function ProductRequirementsTab({ 
   productId, 
-  modules, 
+  modules: initialModules, 
   requirements: initialRequirements,
 }: ProductRequirementsTabProps) {
   const router = useRouter()
   // 数据状态
   const [requirements, setRequirements] = useState<Requirement[]>(initialRequirements)
+  const [modules, setModules] = useState<Module[]>(initialModules)
   
   // UI 状态
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedModule, setSelectedModule] = useState<string | null>(null)
-  const [expandedModules, setExpandedModules] = useState<string[]>(modules.map(m => m.id))
+  const [expandedModules, setExpandedModules] = useState<string[]>(initialModules.map(m => m.id))
   
   // 加载状态
   const [tableLoading, setTableLoading] = useState(false)
@@ -214,6 +215,17 @@ export function ProductRequirementsTab({
 
   // 判断是否有筛选条件（搜索、模块筛选、高级筛选、排序）
   const hasFilters = searchQuery || selectedModule || appliedFilters.length > 0 || appliedSorts.length > 0
+
+  // 加载模块列表
+  const loadModules = useCallback(async () => {
+    try {
+      const data = await moduleApi.getList(productId)
+      setModules(data)
+      setExpandedModules(data.map(m => m.id))
+    } catch (error) {
+      console.error("加载模块失败:", error)
+    }
+  }, [productId])
 
   // 加载需求列表（带筛选和排序）- 只在有筛选条件时才请求API
   const loadRequirements = useCallback(async () => {
@@ -296,7 +308,7 @@ export function ProductRequirementsTab({
       message.success("创建成功")
       setIsCreateModuleOpen(false)
       moduleForm.resetFields()
-      router.refresh()
+      loadModules()
     } catch (error: any) {
       if (error.message) message.error(error.message)
     } finally {
@@ -341,7 +353,7 @@ export function ProductRequirementsTab({
           await moduleApi.delete(productId, moduleId)
           message.success("删除成功")
           if (selectedModule === moduleId) setSelectedModule(null)
-          router.refresh()
+          loadModules()
         } catch (error: any) {
           message.error(error.message || "删除失败")
         }
@@ -387,12 +399,11 @@ export function ProductRequirementsTab({
         <Text 
           style={{ 
             cursor: "pointer", 
-            color: "#1677ff",
             transition: "color 0.2s",
           }}
           onClick={() => handleOpenDetail(record.id)}
-          onMouseEnter={(e) => e.currentTarget.style.color = "#4096ff"}
-          onMouseLeave={(e) => e.currentTarget.style.color = "#1677ff"}
+          onMouseEnter={(e) => e.currentTarget.style.color = "#7c7cff"}
+          onMouseLeave={(e) => e.currentTarget.style.color = ""}
         >
           {record.title}
         </Text>
@@ -411,7 +422,15 @@ export function ProductRequirementsTab({
       render: (name: string, record: Requirement) => (
         name ? (
           <Link href={`/projects/${record.projectId}`}>
-            <Text style={{ color: "#1677ff" }}>{name}</Text>
+            <Text 
+              style={{ 
+                color: "#7c7cff",
+                borderBottom: "1px dashed #7c7cff",
+                paddingBottom: 2,
+              }}
+            >
+              {name}
+            </Text>
           </Link>
         ) : (
           <Tag color="warning">待分配</Tag>
@@ -1053,27 +1072,21 @@ export function ProductRequirementsTab({
         requirementId={selectedRequirementId}
         onClose={handleCloseDetail}
         defaultProductId={productId}
-        onSave={async (data) => {
-          // TODO: 调用 API 保存需求
-          console.log("保存需求:", data)
-          if (hasFilters) {
-            loadRequirements()
-          } else {
-            router.refresh()
-          }
-        }}
-        onCreate={async (data) => {
-          // 调用 API 创建需求
-          await requirementApi.create(productId, {
-            title: data.title || "",
-            description: data.description || undefined,
-            priority: data.priority,
-            moduleId: selectedModule && selectedModule !== "unassigned" ? selectedModule : undefined,
-          })
-          if (hasFilters) {
-            loadRequirements()
-          } else {
-            router.refresh()
+        onSuccess={async () => {
+          // 始终重新加载数据
+          try {
+            setTableLoading(true)
+            const data = await requirementApi.getList(productId, {
+              search: searchQuery || undefined,
+              moduleId: selectedModule || undefined,
+              filters: appliedFilters.length > 0 ? appliedFilters : undefined,
+              sorts: appliedSorts.length > 0 ? appliedSorts : undefined,
+            })
+            setRequirements(data)
+          } catch (error) {
+            console.error(error)
+          } finally {
+            setTableLoading(false)
           }
         }}
       />

@@ -275,7 +275,12 @@ export default function MessagesPage() {
                       </span>
                       <Link
                         href={`/projects/1/work-items/${message.targetId}`}
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs hover:opacity-80"
+                        style={{ 
+                          color: "#7c7cff", 
+                          borderBottom: "1px dashed #7c7cff",
+                          paddingBottom: 1,
+                        }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         查看详情 →

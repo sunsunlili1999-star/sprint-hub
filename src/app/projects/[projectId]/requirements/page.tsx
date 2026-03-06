@@ -40,6 +40,9 @@ import {
   ArrowDownOutlined,
   HolderOutlined,
   RocketOutlined,
+  AppstoreOutlined,
+  FolderOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons"
 import { ListPageLayout, type SidebarItem, type BatchAction } from "@/components/ui/ListPageLayout"
 import { RequirementDetailModal } from "@/components/requirement"
@@ -87,12 +90,65 @@ const getRequirementTypeInfo = (type: string | null) => {
   return type ? info[type] || { label: type, color: "default" } : null
 }
 
+// 筛选条件类型
+interface FilterCondition {
+  id: string
+  logic: "AND" | "OR"
+  field: string
+  operator: string
+  value: string | string[]
+}
+
+// 筛选字段配置
+const filterFields = [
+  { value: "title", label: "标题", type: "text" },
+  { value: "description", label: "描述", type: "text" },
+  { value: "status", label: "状态", type: "select", options: [
+    { value: "NOT_STARTED", label: "未开始" },
+    { value: "IN_PROGRESS", label: "进行中" },
+    { value: "COMPLETED", label: "已完成" },
+  ]},
+  { value: "priority", label: "优先级", type: "select", options: [
+    { value: "P0", label: "P0 - 最高" },
+    { value: "P1", label: "P1 - 高" },
+    { value: "P2", label: "P2 - 中" },
+    { value: "P3", label: "P3 - 低" },
+    { value: "P4", label: "P4 - 最低" },
+  ]},
+  { value: "requirementType", label: "需求类型", type: "select", options: [
+    { value: "FEATURE", label: "功能" },
+    { value: "OPTIMIZATION", label: "优化" },
+    { value: "SECURITY", label: "安全" },
+    { value: "TECH_IMPROVEMENT", label: "技改" },
+  ]},
+  { value: "creatorName", label: "创建人", type: "text" },
+  { value: "assigneeName", label: "负责人", type: "text" },
+]
+
+// 运算符配置
+const operatorsByType: Record<string, { value: string; label: string }[]> = {
+  text: [
+    { value: "contains", label: "包含" },
+    { value: "equals", label: "等于" },
+    { value: "notEquals", label: "不等于" },
+    { value: "startsWith", label: "开头是" },
+    { value: "endsWith", label: "结尾是" },
+  ],
+  select: [
+    { value: "in", label: "包含" },
+    { value: "notIn", label: "不包含" },
+    { value: "equals", label: "等于" },
+    { value: "notEquals", label: "不等于" },
+  ],
+}
+
 // 可排序字段配置
 const sortableFields = [
   { value: "title", label: "标题" },
   { value: "priority", label: "优先级" },
   { value: "status", label: "状态" },
   { value: "requirementType", label: "需求类型" },
+  { value: "productName", label: "来源产品" },
   { value: "sprintName", label: "迭代" },
   { value: "progress", label: "进度" },
   { value: "createdAt", label: "创建时间" },
@@ -111,7 +167,12 @@ export default function ProjectRequirementsPage() {
   
   // UI 状态
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedSprint, setSelectedSprint] = useState<string | null>(null)
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
+  const [expandedProductIds, setExpandedProductIds] = useState<string[]>([])
+  
+  // 产品模块数据
+  const [productModules, setProductModules] = useState<{id: string, name: string, modules: {id: string, name: string}[]}[]>([])
   
   // 加载状态
   const [tableLoading, setTableLoading] = useState(false)
@@ -123,6 +184,11 @@ export default function ProjectRequirementsPage() {
   
   // 表格选中状态
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
+  
+  // 高级筛选状态
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [filterConditions, setFilterConditions] = useState<FilterCondition[]>([])
+  const [appliedFilters, setAppliedFilters] = useState<FilterCondition[]>([])
   
   // 排序状态
   const [isSortModalOpen, setIsSortModalOpen] = useState(false)
@@ -181,7 +247,9 @@ export default function ProjectRequirementsPage() {
       setTableLoading(true)
       const data = await projectRequirementApi.getList(projectId, {
         search: searchQuery,
-        sprintId: selectedSprint || undefined,
+        productId: selectedProductId || undefined,
+        moduleId: selectedModuleId || undefined,
+        filters: appliedFilters.length > 0 ? appliedFilters : undefined,
         sorts: appliedSorts.length > 0 ? appliedSorts : undefined,
       })
       setRequirements(data)
@@ -190,7 +258,7 @@ export default function ProjectRequirementsPage() {
     } finally {
       setTableLoading(false)
     }
-  }, [projectId, searchQuery, selectedSprint, appliedSorts])
+  }, [projectId, searchQuery, selectedProductId, selectedModuleId, appliedFilters, appliedSorts])
 
   // 初始加载
   useEffect(() => {
@@ -207,7 +275,34 @@ export default function ProjectRequirementsPage() {
     if (!loading) {
       loadRequirements()
     }
-  }, [searchQuery, selectedSprint, appliedSorts]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedProductId, selectedModuleId, appliedFilters, appliedSorts]) // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // 加载产品和模块数据（基于项目关联的产品）
+  useEffect(() => {
+    if (project?.products && project.products.length > 0) {
+      // 从关联产品获取模块信息
+      const loadProductModules = async () => {
+        try {
+          const modulesData = await Promise.all(
+            project.products.map(async (p) => {
+              const res = await fetch(`/api/products/${p.id}/modules`)
+              const modules = await res.json()
+              return {
+                id: p.id,
+                name: p.name,
+                modules: modules.map((m: any) => ({ id: m.id, name: m.name })),
+              }
+            })
+          )
+          setProductModules(modulesData)
+          setExpandedProductIds(modulesData.map(p => p.id))
+        } catch (error) {
+          console.error("加载产品模块失败", error)
+        }
+      }
+      loadProductModules()
+    }
+  }, [project?.products])
 
   // 复制 ID 到剪贴板
   const handleCopyId = (id: string) => {
@@ -262,12 +357,12 @@ export default function ProjectRequirementsPage() {
     try {
       const products = await productApi.getList()
       setImportProducts(products)
-      // 如果项目有关联产品，默认选中
-      if (project?.product) {
-        setImportSelectedProduct(project.product.id)
-        const reqs = await requirementApi.getList(project.product.id)
-        // 过滤掉已导入的需求（已有 projectId 的）
-        setImportRequirements(reqs.filter(r => !r.projectId))
+      // 如果项目有关联产品，默认选中第一个
+      if (project?.products && project.products.length > 0) {
+        setImportSelectedProduct(project.products[0].id)
+        const reqs = await requirementApi.getList(project.products[0].id)
+        // 显示所有需求，已导入的会有特殊标记
+        setImportRequirements(reqs)
       }
     } catch (error) {
       console.error("加载产品列表失败", error)
@@ -283,8 +378,8 @@ export default function ProjectRequirementsPage() {
     setImportLoading(true)
     try {
       const reqs = await requirementApi.getList(productId)
-      // 过滤掉已导入的需求
-      setImportRequirements(reqs.filter(r => !r.projectId))
+      // 显示所有需求，已导入的会有特殊标记
+      setImportRequirements(reqs)
     } catch (error) {
       console.error("加载需求失败", error)
     } finally {
@@ -344,12 +439,11 @@ export default function ProjectRequirementsPage() {
           <Text 
             style={{ 
               cursor: "pointer", 
-              color: "#1677ff",
               transition: "color 0.2s",
             }}
             onClick={() => handleOpenDetail(record.id)}
-            onMouseEnter={(e) => e.currentTarget.style.color = "#4096ff"}
-            onMouseLeave={(e) => e.currentTarget.style.color = "#1677ff"}
+            onMouseEnter={(e) => e.currentTarget.style.color = "#7c7cff"}
+            onMouseLeave={(e) => e.currentTarget.style.color = ""}
           >
             {record.title}
           </Text>
@@ -456,10 +550,9 @@ export default function ProjectRequirementsPage() {
     },
   ]
 
-  // 构建迭代侧边栏
-  const buildSprintSidebarItems = (): SidebarItem[] => {
-    const sprints = project?.sprints || []
-    return [
+  // 构建产品/模块侧边栏
+  const buildProductSidebarItems = (): SidebarItem[] => {
+    const items: SidebarItem[] = [
       {
         id: null,
         name: "全部需求",
@@ -467,22 +560,78 @@ export default function ProjectRequirementsPage() {
         count: requirements.length,
         activeColor: "#7c7cff",
       },
-      ...sprints.map((sprint): SidebarItem => ({
-        id: sprint.id,
-        name: sprint.name,
-        icon: <RocketOutlined style={{ color: sprint.status === "ACTIVE" ? "#22d3ee" : "#9999ff", fontSize: 13 }} />,
-        count: requirements.filter(r => r.sprintId === sprint.id).length,
-        activeColor: "#7c7cff",
-      })),
-      {
+    ]
+    
+    // 添加产品及其模块
+    productModules.forEach((product) => {
+      const productReqCount = requirements.filter(r => r.productId === product.id).length
+      items.push({
+        id: `product-${product.id}`,
+        name: product.name,
+        icon: <AppstoreOutlined style={{ color: "#22d3ee", fontSize: 13 }} />,
+        count: productReqCount,
+        activeColor: "#22d3ee",
+        children: product.modules.map((mod): SidebarItem => ({
+          id: `module-${mod.id}`,
+          name: mod.name,
+          icon: <FolderOutlined style={{ color: "#a78bfa", fontSize: 12 }} />,
+          count: requirements.filter(r => r.moduleId === mod.id).length,
+          activeColor: "#a78bfa",
+        })),
+        expanded: expandedProductIds.includes(product.id),
+        onToggleExpand: () => {
+          setExpandedProductIds(prev => 
+            prev.includes(product.id) 
+              ? prev.filter(id => id !== product.id)
+              : [...prev, product.id]
+          )
+        },
+      })
+    })
+    
+    // 添加未分类（没有产品关联的需求）
+    const unassignedCount = requirements.filter(r => !r.productId).length
+    if (unassignedCount > 0) {
+      items.push({
         id: "unassigned",
-        name: "待分配",
+        name: "未分类",
         icon: <FileTextOutlined style={{ color: "#f59e0b", fontSize: 13 }} />,
-        count: requirements.filter(r => !r.sprintId).length,
+        count: unassignedCount,
         activeColor: "#f59e0b",
         activeBg: "#fef3c7",
-      },
-    ]
+      })
+    }
+    
+    return items
+  }
+  
+  // 处理侧边栏选择
+  const handleSidebarSelect = (id: string | null) => {
+    if (id === null) {
+      setSelectedProductId(null)
+      setSelectedModuleId(null)
+    } else if (id === "unassigned") {
+      setSelectedProductId("unassigned")
+      setSelectedModuleId(null)
+    } else if (id.startsWith("product-")) {
+      setSelectedProductId(id.replace("product-", ""))
+      setSelectedModuleId(null)
+    } else if (id.startsWith("module-")) {
+      setSelectedModuleId(id.replace("module-", ""))
+      // 找到对应的产品
+      const product = productModules.find(p => p.modules.some(m => m.id === id.replace("module-", "")))
+      if (product) {
+        setSelectedProductId(product.id)
+      }
+    }
+  }
+  
+  // 获取当前选中的侧边栏 ID
+  const getCurrentSidebarId = () => {
+    if (selectedModuleId) return `module-${selectedModuleId}`
+    if (selectedProductId === "unassigned") return "unassigned"
+    if (selectedProductId) return `product-${selectedProductId}`
+    return null
   }
 
   // 批量操作
@@ -518,9 +667,37 @@ export default function ProjectRequirementsPage() {
     },
   ]
 
-  // 排序工具栏
-  const sortToolbar = (
+  // 筛选和排序工具栏
+  const filterToolbar = (
     <Space size={0}>
+      <Button 
+        type="text"
+        size="small"
+        icon={<FilterOutlined />} 
+        className={`toolbar-text-btn ${appliedFilters.length > 0 ? "active" : ""}`}
+        onClick={() => {
+          setFilterConditions(appliedFilters.length > 0 ? [...appliedFilters] : [{ id: Date.now().toString(), logic: "AND", field: "status", operator: "equals", value: "" }])
+          setIsFilterModalOpen(true)
+        }}
+      >
+        筛选
+        {appliedFilters.length > 0 && (
+          <Tag color="blue" style={{ marginLeft: 4, marginRight: -4, height: 18, lineHeight: "16px", fontSize: 11 }}>{appliedFilters.length}</Tag>
+        )}
+      </Button>
+      {appliedFilters.length > 0 && (
+        <Button 
+          type="text" 
+          size="small" 
+          icon={<CloseOutlined />}
+          className="toolbar-clear-btn"
+          style={{ padding: "0 4px", fontSize: 12, width: 20, minWidth: 20 }} 
+          onClick={() => { 
+            setAppliedFilters([])
+            setFilterConditions([])
+          }}
+        />
+      )}
       <Button 
         type="text"
         size="small"
@@ -549,14 +726,28 @@ export default function ProjectRequirementsPage() {
           }}
         />
       )}
-      <Button
-        type="text"
+    </Space>
+  )
+  
+  // 右侧操作按钮（导入 + 新建）
+  const headerActions = (
+    <Space size={8}>
+      <Button 
+        color="primary"
+        variant="dashed"
         size="small"
-        icon={<ImportOutlined />}
-        className="toolbar-text-btn"
+        icon={<ImportOutlined style={{ fontSize: 12 }} />} 
         onClick={handleOpenImport}
       >
-        从产品导入
+        导入
+      </Button>
+      <Button 
+        type="primary" 
+        size="small"
+        icon={<span style={{ fontSize: 12 }}>+</span>}
+        onClick={handleOpenCreate}
+      >
+        新建
       </Button>
     </Space>
   )
@@ -575,11 +766,11 @@ export default function ProjectRequirementsPage() {
         <ListPageLayout<ProjectRequirement>
           showSidebar
           sidebar={{
-            title: "迭代",
-            icon: <RocketOutlined style={{ fontSize: 14, color: "#7c7cff" }} />,
-            items: buildSprintSidebarItems(),
-            selectedId: selectedSprint,
-            onSelect: (id) => setSelectedSprint(id === "unassigned" ? "unassigned" : id),
+            title: "产品模块",
+            icon: <AppstoreOutlined style={{ fontSize: 14, color: "#7c7cff" }} />,
+            items: buildProductSidebarItems(),
+            selectedId: getCurrentSidebarId(),
+            onSelect: handleSidebarSelect,
           }}
           content={{
             title: "项目需求",
@@ -591,9 +782,8 @@ export default function ProjectRequirementsPage() {
             searchPlaceholder: "搜索需求标题...",
             searchValue: searchQuery,
             onSearch: setSearchQuery,
-            onAdd: handleOpenCreate,
-            addButtonText: "新建",
-            extraToolbar: sortToolbar,
+            headerActions: headerActions,
+            extraToolbar: filterToolbar,
             pagination: {
               current: currentPage,
               pageSize: pageSize,
@@ -709,25 +899,214 @@ export default function ProjectRequirementsPage() {
               rowSelection={{
                 selectedRowKeys: importSelectedKeys,
                 onChange: setImportSelectedKeys,
+                getCheckboxProps: (record: Requirement) => ({
+                  // 已导入到当前项目的需求禁用选择
+                  disabled: record.projectId === projectId,
+                }),
               }}
               columns={[
+                { 
+                  title: "编号", 
+                  dataIndex: "id", 
+                  width: 90,
+                  render: (id: string) => (
+                    <Text type="secondary" style={{ fontFamily: "monospace", fontSize: 12 }}>
+                      {id.slice(-8)}
+                    </Text>
+                  ),
+                },
                 { title: "标题", dataIndex: "title", ellipsis: true },
                 { title: "模块", dataIndex: "moduleName", width: 100, render: (v: string) => v || "-" },
-                { title: "优先级", dataIndex: "priority", width: 80, render: (v: string) => <Tag color={getPriorityColor(v)}>{v}</Tag> },
-                { title: "状态", dataIndex: "status", width: 90, render: (v: string) => {
+                { title: "优先级", dataIndex: "priority", width: 70, render: (v: string) => <Tag color={getPriorityColor(v)}>{v}</Tag> },
+                { title: "状态", dataIndex: "status", width: 80, render: (v: string) => {
                   const info = getStatusInfo(v)
                   return <Tag color={info.color}>{info.label}</Tag>
                 }},
+                { 
+                  title: "导入状态", 
+                  dataIndex: "projectId", 
+                  width: 90,
+                  render: (pid: string | null) => {
+                    if (pid === projectId) {
+                      return <Tag color="success" icon={<CheckCircleOutlined />}>已导入</Tag>
+                    }
+                    if (pid) {
+                      return <Tag color="warning">已关联其他项目</Tag>
+                    }
+                    return <Tag>未导入</Tag>
+                  },
+                },
               ]}
               pagination={{ pageSize: 10 }}
               scroll={{ y: 300 }}
-              locale={{ emptyText: <Empty description="该产品暂无可导入的需求" /> }}
+              locale={{ emptyText: <Empty description="该产品暂无需求" /> }}
             />
           )}
           
           {!importSelectedProduct && (
             <Empty description="请先选择产品" />
           )}
+        </div>
+      </Modal>
+
+      {/* 高级筛选 Modal */}
+      <Modal 
+        title="高级筛选" 
+        open={isFilterModalOpen} 
+        onCancel={() => setIsFilterModalOpen(false)} 
+        width={750}
+        footer={
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <Button onClick={() => setFilterConditions([{ id: Date.now().toString(), logic: "AND", field: "status", operator: "equals", value: "" }])}>
+              重置条件
+            </Button>
+            <Space>
+              <Button onClick={() => setIsFilterModalOpen(false)}>取消</Button>
+              <Button 
+                type="primary" 
+                onClick={() => {
+                  const validConditions = filterConditions.filter(c => c.field && c.operator && c.value)
+                  setAppliedFilters(validConditions)
+                  setIsFilterModalOpen(false)
+                }}
+              >
+                应用筛选
+              </Button>
+            </Space>
+          </div>
+        }
+      >
+        <div style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {filterConditions.map((condition, index) => {
+              const fieldConfig = filterFields.find(f => f.value === condition.field)
+              const operators = operatorsByType[fieldConfig?.type || "text"] || operatorsByType.text
+              
+              return (
+                <div key={condition.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div style={{ width: 70, flexShrink: 0 }}>
+                    {index === 0 ? (
+                      <Text type="secondary">条件</Text>
+                    ) : (
+                      <Select
+                        value={condition.logic}
+                        onChange={(v) => {
+                          const newConditions = [...filterConditions]
+                          newConditions[index] = { ...condition, logic: v }
+                          setFilterConditions(newConditions)
+                        }}
+                        style={{ width: 70 }}
+                        options={[
+                          { value: "AND", label: "且" },
+                          { value: "OR", label: "或" },
+                        ]}
+                      />
+                    )}
+                  </div>
+                  
+                  <Select
+                    value={condition.field}
+                    onChange={(v) => {
+                      const newConditions = [...filterConditions]
+                      const newFieldConfig = filterFields.find(f => f.value === v)
+                      newConditions[index] = { 
+                        ...condition, 
+                        field: v, 
+                        operator: operatorsByType[newFieldConfig?.type || "text"][0].value,
+                        value: "" 
+                      }
+                      setFilterConditions(newConditions)
+                    }}
+                    style={{ width: 120 }}
+                    placeholder="选择字段"
+                    options={filterFields.map(f => ({ value: f.value, label: f.label }))}
+                  />
+                  
+                  <Select
+                    value={condition.operator}
+                    onChange={(v) => {
+                      const newConditions = [...filterConditions]
+                      const isMultiple = v === "in" || v === "notIn"
+                      const wasMultiple = condition.operator === "in" || condition.operator === "notIn"
+                      const newValue = isMultiple !== wasMultiple ? (isMultiple ? [] : "") : condition.value
+                      newConditions[index] = { ...condition, operator: v, value: newValue }
+                      setFilterConditions(newConditions)
+                    }}
+                    style={{ width: 100 }}
+                    placeholder="运算符"
+                    options={operators}
+                  />
+                  
+                  {fieldConfig?.type === "select" ? (
+                    condition.operator === "in" || condition.operator === "notIn" ? (
+                      <Select
+                        mode="multiple"
+                        value={Array.isArray(condition.value) ? condition.value : []}
+                        onChange={(v) => {
+                          const newConditions = [...filterConditions]
+                          newConditions[index] = { ...condition, value: v }
+                          setFilterConditions(newConditions)
+                        }}
+                        style={{ flex: 1 }}
+                        placeholder="选择值（可多选）"
+                        options={fieldConfig.options}
+                        allowClear
+                      />
+                    ) : (
+                      <Select
+                        value={typeof condition.value === "string" ? condition.value || undefined : undefined}
+                        onChange={(v) => {
+                          const newConditions = [...filterConditions]
+                          newConditions[index] = { ...condition, value: v }
+                          setFilterConditions(newConditions)
+                        }}
+                        style={{ flex: 1 }}
+                        placeholder="选择值"
+                        options={fieldConfig.options}
+                        allowClear
+                      />
+                    )
+                  ) : (
+                    <Input
+                      value={typeof condition.value === "string" ? condition.value : ""}
+                      onChange={(e) => {
+                        const newConditions = [...filterConditions]
+                        newConditions[index] = { ...condition, value: e.target.value }
+                        setFilterConditions(newConditions)
+                      }}
+                      style={{ flex: 1 }}
+                      placeholder="输入值"
+                    />
+                  )}
+                  
+                  <Button 
+                    type="text" 
+                    icon={<CloseOutlined />} 
+                    style={{ color: "#ff4d4f" }}
+                    disabled={filterConditions.length === 1}
+                    onClick={() => {
+                      const newConditions = filterConditions.filter(c => c.id !== condition.id)
+                      setFilterConditions(newConditions)
+                    }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+
+          <Button 
+            type="dashed" 
+            icon={<PlusOutlined />} 
+            onClick={() => {
+              setFilterConditions([
+                ...filterConditions, 
+                { id: Date.now().toString(), logic: "AND", field: "status", operator: "equals", value: "" }
+              ])
+            }}
+            style={{ marginTop: 12, width: "100%" }}
+          >
+            添加条件
+          </Button>
         </div>
       </Modal>
 
@@ -863,23 +1242,7 @@ export default function ProjectRequirementsPage() {
         onClose={handleCloseDetail}
         defaultProjectId={projectId}
         sprints={project?.sprints.map(s => ({ value: s.id, label: s.name })) || []}
-        onSave={async (data) => {
-          // TODO: 调用 API 保存需求
-          console.log("保存需求:", data)
-          loadRequirements()
-        }}
-        onCreate={async (data) => {
-          // TODO: 调用 API 创建需求
-          console.log("创建需求:", data)
-          await projectRequirementApi.create(projectId, {
-            title: data.title || "",
-            description: data.description || undefined,
-            priority: data.priority,
-            requirementType: data.requirementType || undefined,
-            sprintId: data.sprintId || undefined,
-          })
-          loadRequirements()
-        }}
+        onSuccess={() => loadRequirements()}
       />
     </>
   )

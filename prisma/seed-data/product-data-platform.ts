@@ -253,7 +253,7 @@ export async function seedDataPlatform(prisma: PrismaClient) {
         description: '实现前置机心跳检测机制，实时监控前置机在线状态，异常时发送告警通知，支持配置告警阈值和通知方式。',
         type: WorkItemType.REQUIREMENT,
         priority: Priority.P2,
-        currentPhase: Phase.COMPLETED,
+        currentPhase: undefined, // 已完成
         devStatus: 'COMPLETED',
         testStatus: 'COMPLETED',
         productId: product.id,
@@ -341,7 +341,7 @@ export async function seedDataPlatform(prisma: PrismaClient) {
         description: '提供采集任务可视化配置界面，支持配置源表、目标表、字段映射、过滤条件、增量策略等。',
         type: WorkItemType.REQUIREMENT,
         priority: Priority.P1,
-        currentPhase: Phase.COMPLETED,
+        currentPhase: undefined, // 已完成
         devStatus: 'COMPLETED',
         testStatus: 'COMPLETED',
         productId: product.id,
@@ -374,7 +374,7 @@ export async function seedDataPlatform(prisma: PrismaClient) {
         description: '提供Web版SQL编辑器，支持语法高亮、智能提示、格式化、执行计划分析等功能。',
         type: WorkItemType.REQUIREMENT,
         priority: Priority.P1,
-        currentPhase: Phase.COMPLETED,
+        currentPhase: undefined, // 已完成
         devStatus: 'COMPLETED',
         testStatus: 'COMPLETED',
         productId: product.id,

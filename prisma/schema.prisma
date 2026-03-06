@@ -76,7 +76,7 @@ model Product {
   documents   Document[]
   versions    ProductVersion[]
   workItems   WorkItem[]      @relation("ProductWorkItem")
-  projects    Project[]       @relation("ProductProjects")
+  projectProducts ProjectProduct[]  // 多对多：产品关联的项目
 
   @@map("products")
 }
@@ -180,7 +180,6 @@ model Project {
   description String?
   status      ProjectStatus @default(ACTIVE)
   starred     Boolean       @default(false)  // 是否收藏
-  productId   String?       // 关联产品
   creatorId   String
   startDate   DateTime?     // 计划开始日期
   endDate     DateTime?     // 计划结束日期
@@ -188,7 +187,6 @@ model Project {
   updatedAt   DateTime      @updatedAt
 
   // 关联
-  product     Product?        @relation("ProductProjects", fields: [productId], references: [id], onDelete: SetNull)
   creator     User            @relation("ProjectCreator", fields: [creatorId], references: [id])
   members     ProjectMember[]
   sprints     Sprint[]
@@ -196,8 +194,23 @@ model Project {
   statusConfigs StatusConfig[]
   phaseConfigs  PhaseConfig[]
   releases    Release[]
+  projectProducts ProjectProduct[]  // 多对多：项目关联的产品
 
   @@map("projects")
+}
+
+// 项目-产品关联表（多对多）
+model ProjectProduct {
+  id        String   @id @default(cuid())
+  projectId String
+  productId String
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, productId])
+  @@map("project_products")
 }
 
 enum ProjectStatus {

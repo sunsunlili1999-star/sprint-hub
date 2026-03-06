@@ -289,7 +289,7 @@ export interface Project {
   starred: boolean
   startDate: string | null
   endDate: string | null
-  product: { id: string; name: string; code: string } | null
+  products: { id: string; name: string; code: string }[]  // 多个产品
   creator: { id: string; name: string; avatar: string | null }
   members: { id: string; name: string; avatar: string | null }[]
   memberCount: number
@@ -318,7 +318,7 @@ export const projectApi = {
   },
 
   // 创建项目
-  create: (data: { name: string; code: string; description?: string; productId?: string; startDate?: string; endDate?: string; memberIds?: string[] }) => {
+  create: (data: { name: string; code: string; description?: string; productIds?: string[]; startDate?: string; endDate?: string; memberIds?: string[] }) => {
     return request<Project>("/projects", {
       method: "POST",
       body: JSON.stringify(data),
@@ -326,7 +326,7 @@ export const projectApi = {
   },
 
   // 更新项目
-  update: (projectId: string, data: { name?: string; code?: string; description?: string; productId?: string; startDate?: string; endDate?: string; status?: string }) => {
+  update: (projectId: string, data: { name?: string; code?: string; description?: string; productIds?: string[]; startDate?: string; endDate?: string; status?: string }) => {
     return request<Project>(`/projects/${projectId}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -375,10 +375,15 @@ export interface ProjectRequirement {
 
 export const projectRequirementApi = {
   // 获取项目需求列表
-  getList: (projectId: string, params?: { search?: string; sprintId?: string; sorts?: SortCondition[] }) => {
+  getList: (projectId: string, params?: { search?: string; sprintId?: string; productId?: string; moduleId?: string; filters?: FilterCondition[]; sorts?: SortCondition[] }) => {
     const searchParams = new URLSearchParams()
     if (params?.search) searchParams.set("search", params.search)
     if (params?.sprintId) searchParams.set("sprintId", params.sprintId)
+    if (params?.productId) searchParams.set("productId", params.productId)
+    if (params?.moduleId) searchParams.set("moduleId", params.moduleId)
+    if (params?.filters && params.filters.length > 0) {
+      searchParams.set("filters", JSON.stringify(params.filters))
+    }
     if (params?.sorts && params.sorts.length > 0) {
       searchParams.set("sorts", JSON.stringify(params.sorts))
     }

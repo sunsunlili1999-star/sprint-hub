@@ -23,8 +23,12 @@ export async function GET(request: NextRequest) {
         creator: {
           select: { id: true, name: true, avatar: true },
         },
-        product: {
-          select: { id: true, name: true, code: true },
+        projectProducts: {
+          include: {
+            product: {
+              select: { id: true, name: true, code: true },
+            },
+          },
         },
         members: {
           include: {
@@ -53,7 +57,7 @@ export async function GET(request: NextRequest) {
       starred: project.starred,
       startDate: project.startDate?.toISOString().split("T")[0] || null,
       endDate: project.endDate?.toISOString().split("T")[0] || null,
-      product: project.product,
+      products: project.projectProducts.map(pp => pp.product),  // 多个产品
       creator: project.creator,
       members: project.members.map(m => m.user),
       memberCount: project.members.length,
@@ -73,7 +77,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, code, description, productId, startDate, endDate, memberIds } = body
+    const { name, code, description, productIds, startDate, endDate, memberIds } = body
 
     // 验证必填字段（trim 后检查）
     const trimmedName = name?.trim()
@@ -100,7 +104,6 @@ export async function POST(request: NextRequest) {
         name: trimmedName,
         code: trimmedCode,
         description,
-        productId: productId || null,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         creatorId: currentUserId,
@@ -112,18 +115,31 @@ export async function POST(request: NextRequest) {
               .map((userId: string) => ({ userId, role: "DEVELOPER" as const })),
           ],
         },
+        // 关联多个产品
+        projectProducts: {
+          create: (productIds || []).map((productId: string) => ({
+            productId,
+          })),
+        },
       },
       include: {
         creator: {
           select: { id: true, name: true, avatar: true },
         },
-        product: {
-          select: { id: true, name: true, code: true },
+        projectProducts: {
+          include: {
+            product: {
+              select: { id: true, name: true, code: true },
+            },
+          },
         },
       },
     })
 
-    return NextResponse.json(project, { status: 201 })
+    return NextResponse.json({
+      ...project,
+      products: project.projectProducts.map(pp => pp.product),
+    }, { status: 201 })
   } catch (error: unknown) {
     console.error("创建项目失败:", error)
     const errorMessage = error instanceof Error ? error.message : "创建项目失败"

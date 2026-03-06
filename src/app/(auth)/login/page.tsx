@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Form, Input, Button, Card, Typography, message, Space } from "antd"
+import { Form, Input, Button, Card, Typography, message, Space, Spin } from "antd"
 import { UserOutlined, LockOutlined, RocketOutlined } from "@ant-design/icons"
 
 const { Title, Text } = Typography
@@ -13,7 +13,7 @@ interface LoginForm {
   password: string
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/"
@@ -45,8 +45,8 @@ export default function LoginPage() {
         message.error(result.error)
       } else {
         message.success("登录成功")
-        router.push(callbackUrl)
-        router.refresh()
+        // 使用 window.location 进行完整页面跳转，确保 session 状态正确加载
+        window.location.href = callbackUrl
       }
     } catch (error) {
       message.error("登录失败，请重试")
@@ -195,5 +195,23 @@ export default function LoginPage() {
         </div>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      }}>
+        <Spin size="large" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

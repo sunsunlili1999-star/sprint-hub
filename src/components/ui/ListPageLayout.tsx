@@ -18,6 +18,8 @@ export interface SidebarItem {
   color?: string
   activeColor?: string
   activeBg?: string
+  expanded?: boolean
+  onToggleExpand?: () => void
 }
 
 // 批量操作项类型
@@ -57,6 +59,8 @@ interface ContentConfig<T> {
   // 新建按钮
   onAdd?: () => void
   addButtonText?: string
+  // 右侧自定义操作按钮（会替代默认的新建按钮）
+  headerActions?: ReactNode
   // 额外的工具栏内容
   extraToolbar?: ReactNode
   // 分页
@@ -88,7 +92,8 @@ function Sidebar({ config }: { config: SidebarConfig }) {
 
   const renderItem = (item: SidebarItem, level: number = 0) => {
     const isSelected = selectedId === item.id
-    const isExpanded = expandedIds.includes(item.id || "")
+    // 支持两种方式：通过 expandedIds 或通过 item.expanded
+    const isExpanded = item.expanded !== undefined ? item.expanded : expandedIds.includes(item.id || "")
     const hasChildren = item.children && item.children.length > 0
     const paddingLeft = 16 + level * 20
 
@@ -106,8 +111,18 @@ function Sidebar({ config }: { config: SidebarConfig }) {
           onClick={() => onSelect(item.id)}
         >
           <Space size={6}>
-            {hasChildren && onToggleExpand ? (
-              <span onClick={(e) => { e.stopPropagation(); onToggleExpand(item.id || "") }}>
+            {hasChildren && (item.onToggleExpand || onToggleExpand) ? (
+              <span 
+                onClick={(e) => { 
+                  e.stopPropagation() 
+                  if (item.onToggleExpand) {
+                    item.onToggleExpand()
+                  } else if (onToggleExpand) {
+                    onToggleExpand(item.id || "") 
+                  }
+                }}
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 {item.icon}
               </span>
             ) : (
@@ -177,6 +192,7 @@ export function ListPageLayout<T extends object>({
     onSearch,
     onAdd,
     addButtonText = "新建",
+    headerActions,
     extraToolbar,
     pagination,
     batchActions,
@@ -217,7 +233,7 @@ export function ListPageLayout<T extends object>({
             {icon}
             <Text style={{ fontSize: 13, fontWeight: 500, color: "#475569" }}>{title}</Text>
           </Space>
-          {onAdd && (
+          {headerActions ? headerActions : onAdd && (
             <Button type="primary" size="small" icon={<span style={{ fontSize: 12 }}>+</span>} onClick={onAdd}>
               {addButtonText}
             </Button>
@@ -299,7 +315,7 @@ export function ListPageLayout<T extends object>({
         <div style={{
           padding: "8px 16px",
           borderTop: "1px solid #e2e8f0",
-          background: "#fff",
+          background: "#f8f9fc",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",

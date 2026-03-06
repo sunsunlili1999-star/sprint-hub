@@ -140,11 +140,13 @@ function ProjectCard({
       </Paragraph>
 
       {/* 关联产品 */}
-      {project.product && (
-        <div style={{ marginBottom: 12 }}>
-          <Tag color="purple" style={{ margin: 0 }}>
-            关联产品: {project.product.name}
-          </Tag>
+      {project.products && project.products.length > 0 && (
+        <div style={{ marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {project.products.map(p => (
+            <Tag key={p.id} color="purple" style={{ margin: 0 }}>
+              {p.name}
+            </Tag>
+          ))}
         </div>
       )}
 
@@ -160,7 +162,7 @@ function ProjectCard({
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {/* 团队成员 */}
-        <Avatar.Group maxCount={4} size="small">
+        <Avatar.Group max={{ count: 4 }} size="small">
           {project.members.map((member) => (
             <Tooltip key={member.id} title={member.name}>
               <Avatar style={{ background: "#a5b4fc" }}>
@@ -259,7 +261,7 @@ export default function ProjectsPage() {
         name: values.name,
         code: values.code,
         description: values.description,
-        productId: values.productId,
+        productIds: values.productIds,
         startDate: values.dateRange?.[0]?.format("YYYY-MM-DD"),
         endDate: values.dateRange?.[1]?.format("YYYY-MM-DD"),
       }
@@ -285,7 +287,7 @@ export default function ProjectsPage() {
       name: project.name,
       code: project.code,
       description: project.description,
-      productId: project.product?.id,
+      productIds: project.products?.map(p => p.id) || [],
       dateRange: project.startDate && project.endDate 
         ? [dayjs(project.startDate), dayjs(project.endDate)]
         : undefined,
@@ -303,7 +305,7 @@ export default function ProjectsPage() {
         name: values.name,
         code: values.code,
         description: values.description,
-        productId: values.productId,
+        productIds: values.productIds,
         startDate: values.dateRange?.[0]?.format("YYYY-MM-DD"),
         endDate: values.dateRange?.[1]?.format("YYYY-MM-DD"),
       }
@@ -488,9 +490,10 @@ export default function ProjectsPage() {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="productId" label="关联产品">
+          <Form.Item name="productIds" label="关联产品">
             <Select
-              placeholder="选择关联的产品（可选）"
+              mode="multiple"
+              placeholder="选择关联的产品（可多选）"
               allowClear
               showSearch
               optionFilterProp="label"
@@ -542,9 +545,10 @@ export default function ProjectsPage() {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="productId" label="关联产品">
+          <Form.Item name="productIds" label="关联产品">
             <Select
-              placeholder="选择关联的产品（可选）"
+              mode="multiple"
+              placeholder="选择关联的产品（可多选）"
               allowClear
               showSearch
               optionFilterProp="label"

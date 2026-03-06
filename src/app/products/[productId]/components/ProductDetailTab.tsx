@@ -9,6 +9,8 @@ import {
   Form,
   Input,
   Modal,
+  Tag,
+  List,
 } from "antd"
 import {
   EditOutlined,
@@ -22,8 +24,18 @@ import { productApi } from "@/lib/api"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { message } from "antd"
+import Link from "next/link"
 
 const { Text, Title } = Typography
+
+interface RelatedProject {
+  id: string
+  name: string
+  code: string
+  status: string
+  startDate: string | null
+  endDate: string | null
+}
 
 interface ProductInfo {
   id: string
@@ -36,6 +48,7 @@ interface ProductInfo {
   requirementCount: number
   starred: boolean
   createdAt: string
+  projects?: RelatedProject[]
 }
 
 interface ProductDetailTabProps {
@@ -150,11 +163,41 @@ export function ProductDetailTab({ product }: ProductDetailTabProps) {
       <div style={{ flex: 1, display: "flex", gap: 16, minHeight: 0 }}>
         <div style={{ flex: 1, background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div style={{ padding: "12px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8f9fc" }}>
-            <Space size={8}><ProjectOutlined style={{ fontSize: 15, color: "#7c7cff" }} /><Text style={{ fontWeight: 500, fontSize: 14 }}>关联项目</Text></Space>
+            <Space size={8}><ProjectOutlined style={{ fontSize: 15, color: "#7c7cff" }} /><Text style={{ fontWeight: 500, fontSize: 14 }}>关联项目</Text><Tag>{product.projects?.length || 0}</Tag></Space>
             <Button type="link" size="small" icon={<PlusOutlined />} style={{ padding: 0, height: "auto" }}>关联</Button>
           </div>
           <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无关联项目" />
+            {product.projects && product.projects.length > 0 ? (
+              <List
+                size="small"
+                dataSource={product.projects}
+                renderItem={(project) => (
+                  <List.Item style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                      <div>
+                        <Link href={`/projects/${project.id}`}>
+                          <Text 
+                            style={{ 
+                              color: "#7c7cff",
+                              borderBottom: "1px dashed #7c7cff",
+                              paddingBottom: 2,
+                            }}
+                          >
+                            {project.name}
+                          </Text>
+                        </Link>
+                        <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>{project.code}</Text>
+                      </div>
+                      <Tag color={project.status === "ACTIVE" ? "processing" : "default"}>
+                        {project.status === "ACTIVE" ? "进行中" : "已归档"}
+                      </Tag>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无关联项目" />
+            )}
           </div>
         </div>
         <div style={{ flex: 1, background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", overflow: "hidden" }}>
