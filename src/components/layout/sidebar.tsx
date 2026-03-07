@@ -89,15 +89,15 @@ export function Sidebar() {
         )}>
           {!collapsed && (
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-[#7c7cff] to-[#22d3ee] rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">P</span>
               </div>
-              <span className="font-bold text-lg">SprintHub</span>
+              <span className="font-bold text-lg">Projex</span>
             </Link>
           )}
           {collapsed && (
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
+            <div className="w-8 h-8 bg-gradient-to-br from-[#7c7cff] to-[#22d3ee] rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">P</span>
             </div>
           )}
         </div>
@@ -114,7 +114,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
                   isActive
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    ? "bg-gradient-to-r from-[#7c7cff] to-[#22d3ee] text-white shadow-lg"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 )}
               >

@@ -14,6 +14,7 @@ import {
   Space,
   theme,
   Typography,
+  Tooltip,
 } from "antd"
 import type { MenuProps } from "antd"
 import {
@@ -25,17 +26,19 @@ import {
   CalendarOutlined,
   BellOutlined,
   SettingOutlined,
-  PlusOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
   LogoutOutlined,
-  FileTextOutlined,
   RightOutlined,
   CaretDownOutlined,
   StarOutlined,
   StarFilled,
+  RobotOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons"
+import { AISidebar } from "@/components/ai/AISidebar"
+import { SmartPlanningModal } from "@/components/ai/SmartPlanningModal"
 
 const { Text } = Typography
 
@@ -45,6 +48,11 @@ const { Header, Sider, Content } = Layout
 export interface DropdownOption {
   key: string
   label: string
+}
+
+export interface HeaderTag {
+  label: string
+  color: string
 }
 
 export interface BreadcrumbItem {
@@ -61,6 +69,15 @@ export interface BreadcrumbItem {
     starred: boolean
     onToggle: () => void
   }
+  // Tag 样式
+  tag?: {
+    color?: string
+    icon?: React.ReactNode
+  }
+  // 是否显示闪光装饰（用于智能规划）
+  sparkle?: boolean
+  // Header 右侧显示的 Tags（仅第一个面包屑项生效）
+  headerTags?: HeaderTag[]
 }
 
 // Tab 配置
@@ -77,6 +94,9 @@ interface BreadcrumbContextType {
   activeTab: string
   setHeaderTabs: (tabs: HeaderTab[], activeKey: string, onChange: (key: string) => void) => void
   clearHeaderTabs: () => void
+  // AI Sidebar
+  showAISidebar: boolean
+  setShowAISidebar: (show: boolean) => void
 }
 
 const BreadcrumbContext = createContext<BreadcrumbContextType | undefined>(undefined)
@@ -93,8 +113,11 @@ export function useBreadcrumb() {
 function CustomBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
   const { token } = theme.useToken()
 
+  // 获取第一个面包屑项的 headerTags
+  const headerTags = items[0]?.headerTags
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, height: "100%" }}>
       {items.map((item, index) => (
         <React.Fragment key={index}>
           {index > 0 && (
@@ -165,6 +188,60 @@ function CustomBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
             >
               {item.title}
             </Link>
+          ) : item.sparkle ? (
+            // 智能规划特殊样式：渐变色文字+闪光图标
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #7c7cff 0%, #22d3ee 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  fontWeight: 600,
+                  fontSize: 15,
+                }}
+              >
+                {item.title}
+              </span>
+              <span style={{ display: "flex", alignItems: "flex-start" }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-gradient)"/>
+                  <defs>
+                    <linearGradient id="sparkle-gradient" x1="2" y1="2" x2="22" y2="22">
+                      <stop stopColor="#7c7cff"/>
+                      <stop offset="1" stopColor="#22d3ee"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" style={{ marginLeft: -2, marginTop: -1 }}>
+                  <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-gradient-sm)" opacity="0.6"/>
+                  <defs>
+                    <linearGradient id="sparkle-gradient-sm" x1="2" y1="2" x2="22" y2="22">
+                      <stop stopColor="#7c7cff"/>
+                      <stop offset="1" stopColor="#22d3ee"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </span>
+            </span>
+          ) : item.tag ? (
+            // Tag 样式
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "2px 10px",
+                borderRadius: 4,
+                background: item.tag.color ? `${item.tag.color}15` : "#f1f5f9",
+                color: item.tag.color || "#64748b",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              {item.tag.icon}
+              {item.title}
+            </span>
           ) : (
             <span style={{ color: token.colorText, fontWeight: 500 }}>
               {item.title}
@@ -172,6 +249,32 @@ function CustomBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
           )}
         </React.Fragment>
       ))}
+      
+      {/* Header Tags - 显示在面包屑右侧 */}
+      {headerTags && headerTags.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 12 }}>
+          {headerTags.map((tag, index) => (
+            <span
+              key={index}
+              style={{
+                padding: "1px 8px",
+                borderRadius: 4,
+                background: `${tag.color}15`,
+                color: tag.color,
+                fontSize: 12,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                lineHeight: "18px",
+                height: 20,
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              {tag.label}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -180,8 +283,8 @@ function CustomBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
 const menuItems: MenuProps["items"] = [
   {
     key: "/",
-    icon: <HomeOutlined />,
-    label: "工作台",
+    icon: <RobotOutlined />,
+    label: "AI 工作台",
   },
   {
     key: "/products",
@@ -220,36 +323,6 @@ const menuItems: MenuProps["items"] = [
     key: "/settings",
     icon: <SettingOutlined />,
     label: "设置",
-  },
-]
-
-// Quick create menu
-const createMenuItems: MenuProps["items"] = [
-  {
-    key: "requirement",
-    icon: <FileTextOutlined style={{ color: "#7c7cff" }} />,
-    label: "新建需求",
-  },
-  {
-    key: "task",
-    icon: <CheckSquareOutlined style={{ color: "#6366f1" }} />,
-    label: "新建任务",
-  },
-  {
-    key: "bug",
-    icon: <FileTextOutlined style={{ color: "#ff4d4f" }} />,
-    label: "新建缺陷",
-  },
-  {
-    type: "divider",
-  },
-  {
-    key: "project",
-    label: "新建项目",
-  },
-  {
-    key: "sprint",
-    label: "新建迭代",
   },
 ]
 
@@ -299,6 +372,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const [tabs, setTabs] = useState<HeaderTab[]>([])
   const [activeTab, setActiveTab] = useState<string>("")
   const [tabChangeHandler, setTabChangeHandler] = useState<((key: string) => void) | null>(null)
+  const [showAISidebar, setShowAISidebar] = useState(false) // 默认不显示 AI 侧边栏
+  const [hasUnread, setHasUnread] = useState(true) // 是否有未读消息
+  const [showPlanningModal, setShowPlanningModal] = useState(false)
   const { token } = theme.useToken()
 
   // 登录页面不使用 MainLayout，直接渲染内容
@@ -379,9 +455,28 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   // 面包屑数据（不再添加首页图标，由各页面自行控制）
   const breadcrumbItems = breadcrumbs
 
+  // 不再为侧边栏预留空间，改为悬浮面板
+  const rightPadding = 0
+  
+  // 打开 AI 面板时标记为已读
+  const handleOpenAISidebar = () => {
+    setShowAISidebar(true)
+    setHasUnread(false)
+  }
+
   return (
-    <BreadcrumbContext.Provider value={{ breadcrumbs, setBreadcrumbs, tabs, activeTab, setHeaderTabs, clearHeaderTabs }}>
+    <BreadcrumbContext.Provider value={{ 
+      breadcrumbs, 
+      setBreadcrumbs, 
+      tabs, 
+      activeTab, 
+      setHeaderTabs, 
+      clearHeaderTabs,
+      showAISidebar,
+      setShowAISidebar,
+    }}>
       <Layout style={{ minHeight: "100vh", background: "transparent" }}>
+        {/* 左侧菜单 */}
         <Sider
           trigger={null}
           collapsible
@@ -407,22 +502,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               borderBottom: "1px solid rgba(255,255,255,0.08)",
             }}
           >
-            <div
+            <img
+              src="/logo.png"
+              alt="Projex"
               style={{
                 width: 32,
                 height: 32,
-                background: "linear-gradient(135deg, #22d3ee 0%, #7c7cff 100%)",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontWeight: "bold",
-                fontSize: 14,
+                objectFit: "contain",
               }}
-            >
-              S
-            </div>
+            />
             {!collapsed && (
               <span
                 style={{
@@ -432,7 +520,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   fontSize: 18,
                 }}
               >
-                SprintHub
+                Projex
               </span>
             )}
           </div>
@@ -472,7 +560,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
         </Sider>
 
-        <Layout style={{ marginLeft: collapsed ? 80 : 220, transition: "margin-left 0.2s", background: "transparent" }}>
+        {/* 主内容区 */}
+        <Layout 
+          style={{ 
+            marginLeft: collapsed ? 80 : 220, 
+            marginRight: rightPadding,
+            transition: "all 0.3s", 
+            background: "transparent" 
+          }}
+        >
           {/* Header */}
           <Header
             style={{
@@ -551,13 +647,33 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Actions */}
-            <Space size={16}>
-              {/* Quick Create */}
-              <Dropdown menu={{ items: createMenuItems }} placement="bottomRight">
-                <Button type="primary" icon={<PlusOutlined />}>
-                  创建
+            <Space size={12}>
+              {/* 开始智能规划按钮 - 在智能规划页面隐藏 */}
+              {!pathname.startsWith("/ai/smart-planning") && (
+                <Button
+                  type="primary"
+                  onClick={() => setShowPlanningModal(true)}
+                  style={{
+                    background: "linear-gradient(135deg, #7c7cff 0%, #22d3ee 100%)",
+                    border: "none",
+                    fontWeight: 500,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  {/* AI 双闪光图标 */}
+                  <span style={{ display: "flex", alignItems: "flex-start", marginRight: 2 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="currentColor"/>
+                    </svg>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" style={{ marginLeft: -3, marginTop: -2, opacity: 0.7 }}>
+                      <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="currentColor"/>
+                    </svg>
+                  </span>
+                  开始智能规划
                 </Button>
-              </Dropdown>
+              )}
 
               {/* Notifications */}
               <Badge count={3} size="small">
@@ -580,6 +696,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   {session?.user?.name?.[0] || "?"}
                 </Avatar>
               </Dropdown>
+
             </Space>
           </Header>
 
@@ -587,12 +704,117 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <Content
             style={{
               background: "transparent",
-              minHeight: "calc(100vh - 64px)",
+              minHeight: "calc(100vh - 56px)",
             }}
           >
             {children}
           </Content>
         </Layout>
+
+        {/* 右侧 AI 聊天面板 - 悬浮显示 */}
+        {showAISidebar && (
+          <>
+            {/* 遮罩层 */}
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.3)",
+                zIndex: 199,
+              }}
+              onClick={() => setShowAISidebar(false)}
+            />
+            {/* 聊天面板 */}
+            <div
+              style={{
+                position: "fixed",
+                right: 24,
+                bottom: 24,
+                width: 400,
+                height: "calc(100vh - 120px)",
+                maxHeight: 700,
+                zIndex: 200,
+                borderRadius: 16,
+                overflow: "hidden",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+              }}
+            >
+              <AISidebar onCollapse={() => setShowAISidebar(false)} />
+            </div>
+          </>
+        )}
+
+        {/* 右下角悬浮机器人按钮 */}
+        {!showAISidebar && (
+          <>
+            <style jsx>{`
+              @keyframes float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-8px); }
+              }
+              @keyframes pulse-ring {
+                0% { transform: scale(0.8); opacity: 0.6; }
+                100% { transform: scale(1.5); opacity: 0; }
+              }
+            `}</style>
+            <div
+              onClick={handleOpenAISidebar}
+              style={{
+                position: "fixed",
+                right: 12,
+                bottom: 12,
+                width: 160,
+                height: 160,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                zIndex: 100,
+                animation: "float 3s ease-in-out infinite",
+              }}
+            >
+              {/* 脉冲光环效果 - 仅未读时显示 */}
+              {hasUnread && (
+                <div
+                  style={{
+                    position: "absolute",
+                    width: 100,
+                    height: 100,
+                    borderRadius: 50,
+                    background: "linear-gradient(135deg, #7c7cff 0%, #22d3ee 100%)",
+                    animation: "pulse-ring 2s ease-out infinite",
+                  }}
+                />
+              )}
+              {/* 机器人图片 */}
+              <img
+                src="/pilot.png"
+                alt="AI 助手"
+                style={{
+                  width: 160,
+                  height: 160,
+                  objectFit: "contain",
+                  transition: "transform 0.3s",
+                  position: "relative",
+                  zIndex: 1,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.1)"
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)"
+                }}
+              />
+
+            </div>
+          </>
+        )}
+
+        {/* 智能规划弹窗 */}
+        <SmartPlanningModal 
+          open={showPlanningModal} 
+          onClose={() => setShowPlanningModal(false)} 
+        />
       </Layout>
     </BreadcrumbContext.Provider>
   )

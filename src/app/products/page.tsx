@@ -12,12 +12,9 @@ import {
   Dropdown,
   Modal,
   Form,
-  Row,
-  Col,
   Typography,
   Empty,
   Skeleton,
-  Spin,
   message,
 } from "antd"
 import {
@@ -316,42 +313,51 @@ export default function ProductsPage() {
 
       {/* 产品卡片 */}
       {loading ? (
-        <Row gutter={[20, 20]}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: 20,
+          }}
+        >
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Col key={i} xs={24} sm={12} lg={8} xl={6}>
-              <Card style={{ height: "100%", borderColor: "#e2e8f0" }}>
-                <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                  <Skeleton.Avatar active size={40} shape="square" />
-                  <div style={{ flex: 1 }}>
-                    <Skeleton.Input active size="small" style={{ width: 120, marginBottom: 8 }} />
-                    <Skeleton.Button active size="small" style={{ width: 60, height: 22 }} />
-                  </div>
+            <Card key={i} style={{ borderColor: "#e2e8f0" }}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                <Skeleton.Avatar active size={40} shape="square" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton.Input active size="small" style={{ width: 120, marginBottom: 8 }} />
+                  <Skeleton.Button active size="small" style={{ width: 60, height: 22 }} />
                 </div>
-                <Skeleton active paragraph={{ rows: 2 }} title={false} />
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
-                  <Space>
-                    <Skeleton.Avatar active size="small" />
-                    <Skeleton.Input active size="small" style={{ width: 60 }} />
-                  </Space>
+              </div>
+              <Skeleton active paragraph={{ rows: 2 }} title={false} />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+                <Space>
+                  <Skeleton.Avatar active size="small" />
                   <Skeleton.Input active size="small" style={{ width: 60 }} />
-                </div>
-              </Card>
-            </Col>
+                </Space>
+                <Skeleton.Input active size="small" style={{ width: 60 }} />
+              </div>
+            </Card>
           ))}
-        </Row>
+        </div>
       ) : filteredProducts.length > 0 ? (
-        <Row gutter={[20, 20]}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: 20,
+          }}
+        >
           {filteredProducts.map((product) => (
-            <Col key={product.id} xs={24} sm={12} lg={8} xl={6}>
-              <ProductCard 
-                product={product} 
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onToggleStar={handleToggleStar}
-              />
-            </Col>
+            <ProductCard 
+              key={product.id}
+              product={product} 
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onToggleStar={handleToggleStar}
+            />
           ))}
-        </Row>
+        </div>
       ) : (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}

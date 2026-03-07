@@ -6,11 +6,17 @@ import zhCN from "antd/locale/zh_CN";
 import "./globals.css";
 import { MainLayout } from "@/components/layout/main-layout";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { AppLoadingProvider } from "@/components/providers/AppLoadingProvider";
 
 export const metadata: Metadata = {
-  title: "SprintHub - 项目迭代管理系统",
-  description: "AI赋能的项目迭代管理平台，支持多项目管理、迭代规划、工作项跟踪、依赖管理",
-  keywords: ["项目管理", "迭代管理", "敏捷开发", "Scrum", "看板"],
+  title: "Projex - AI 驱动的智能项目管理平台",
+  description: "Projex 是一款 AI 驱动的智能项目管理平台，内置 AI 助手小派，支持需求智能解析、迭代自动规划、风险实时预警、进度智能追踪",
+  keywords: ["项目管理", "AI项目经理", "迭代管理", "敏捷开发", "智能规划", "风险分析"],
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -56,7 +62,9 @@ export default function RootLayout({
                 },
               }}
             >
-              <MainLayout>{children}</MainLayout>
+              <AppLoadingProvider>
+                <MainLayout>{children}</MainLayout>
+              </AppLoadingProvider>
             </ConfigProvider>
           </SessionProvider>
         </AntdRegistry>

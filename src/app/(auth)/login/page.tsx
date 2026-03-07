@@ -4,7 +4,7 @@ import { useState, Suspense } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Form, Input, Button, Card, Typography, message, Space, Spin } from "antd"
-import { UserOutlined, LockOutlined, RocketOutlined } from "@ant-design/icons"
+import { UserOutlined, LockOutlined } from "@ant-design/icons"
 
 const { Title, Text } = Typography
 
@@ -84,7 +84,7 @@ function LoginContent() {
               width: 64,
               height: 64,
               borderRadius: 16,
-              background: "linear-gradient(135deg, #7c7cff 0%, #a78bfa 100%)",
+              background: "linear-gradient(135deg, #7c7cff 0%, #22d3ee 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -92,12 +92,12 @@ function LoginContent() {
               boxShadow: "0 8px 24px rgba(124, 124, 255, 0.4)",
             }}
           >
-            <RocketOutlined style={{ fontSize: 32, color: "#fff" }} />
+            <span style={{ fontSize: 28, color: "#fff", fontWeight: 700 }}>P</span>
           </div>
           <Title level={2} style={{ margin: 0, color: "#1e293b" }}>
-            SprintHub
+            Projex
           </Title>
-          <Text type="secondary">敏捷项目管理平台</Text>
+          <Text type="secondary">AI 驱动的智能项目管理平台</Text>
         </div>
 
         {/* 错误提示 */}

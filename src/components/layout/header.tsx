@@ -54,7 +54,7 @@ export function Header() {
         {/* Quick Create */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button size="sm" className="bg-gradient-to-r from-[#7c7cff] to-[#22d3ee] hover:from-[#6b6bef] hover:to-[#11c2dd]">
               <Plus className="w-4 h-4 mr-1" />
               创建
             </Button>
@@ -96,7 +96,7 @@ export function Header() {
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/avatars/user.png" alt="用户头像" />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                <AvatarFallback className="bg-gradient-to-br from-[#7c7cff] to-[#22d3ee] text-white text-xs">
                   张
                 </AvatarFallback>
               </Avatar>

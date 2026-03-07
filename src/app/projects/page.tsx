@@ -404,46 +404,55 @@ export default function ProjectsPage() {
 
       {/* 项目卡片 */}
       {loading ? (
-        <Row gutter={[20, 20]}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 20,
+          }}
+        >
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Col key={i} xs={24} sm={12} lg={8} xl={6}>
-              <Card style={{ height: "100%", borderColor: "#e2e8f0" }}>
-                <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                  <Skeleton.Avatar active size={40} shape="square" />
-                  <div style={{ flex: 1 }}>
-                    <Skeleton.Input active size="small" style={{ width: 120, marginBottom: 8 }} />
-                    <Space size={4}>
-                      <Skeleton.Button active size="small" style={{ width: 50, height: 22 }} />
-                      <Skeleton.Button active size="small" style={{ width: 50, height: 22 }} />
-                    </Space>
-                  </div>
+            <Card key={i} style={{ borderColor: "#e2e8f0" }}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                <Skeleton.Avatar active size={40} shape="square" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton.Input active size="small" style={{ width: 120, marginBottom: 8 }} />
+                  <Space size={4}>
+                    <Skeleton.Button active size="small" style={{ width: 50, height: 22 }} />
+                    <Skeleton.Button active size="small" style={{ width: 50, height: 22 }} />
+                  </Space>
                 </div>
-                <Skeleton active paragraph={{ rows: 2 }} title={false} />
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
-                  <Avatar.Group>
-                    {[1, 2, 3].map(j => (
-                      <Skeleton.Avatar key={j} active size="small" />
-                    ))}
-                  </Avatar.Group>
-                  <Skeleton.Input active size="small" style={{ width: 80 }} />
-                </div>
-              </Card>
-            </Col>
+              </div>
+              <Skeleton active paragraph={{ rows: 2 }} title={false} />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+                <Avatar.Group>
+                  {[1, 2, 3].map(j => (
+                    <Skeleton.Avatar key={j} active size="small" />
+                  ))}
+                </Avatar.Group>
+                <Skeleton.Input active size="small" style={{ width: 80 }} />
+              </div>
+            </Card>
           ))}
-        </Row>
+        </div>
       ) : filteredProjects.length > 0 ? (
-        <Row gutter={[20, 20]}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 20,
+          }}
+        >
           {filteredProjects.map((project) => (
-            <Col key={project.id} xs={24} sm={12} lg={8} xl={6}>
-              <ProjectCard 
-                project={project} 
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onToggleStar={handleToggleStar}
-              />
-            </Col>
+            <ProjectCard 
+              key={project.id}
+              project={project} 
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onToggleStar={handleToggleStar}
+            />
           ))}
-        </Row>
+        </div>
       ) : (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
