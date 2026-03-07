@@ -1,0 +1,54 @@
+# Projex 每日状态推送工作流
+# 每天早上 9:00 自动执行
+
+name: daily-status-push
+description: 每日状态推送 - 自动获取项目状态并发送到钉钉
+
+# 触发条件
+triggers:
+  # 定时触发：每天早上 9:00
+  - type: cron
+    cron: "0 9 * * *"  # 分 时 日 月 周
+    timezone: "Asia/Shanghai"
+  
+  # 手动触发
+  - type: manual
+    name: "手动执行每日推送"
+
+# 工作流步骤
+steps:
+  # 步骤 1: 获取迭代状态
+  - id: get_sprints
+    name: "获取迭代状态"
+    skill: projex-status
+    action: get_sprint_status
+    params: {}
+    
+  # 步骤 2: 获取发布状态
+  - id: get_releases
+    name: "获取发布状态"
+    skill: projex-status
+    action: get_release_status
+    params: {}
+
+  # 步骤 3: 发送钉钉消息
+  - id: send_dingtalk
+    name: "发送钉钉消息"
+    skill: dingtalk-notify
+    action: send_daily_status
+    params:
+      sprint_status: "{{ steps.get_sprints.content }}"
+      release_status: "{{ steps.get_releases.content }}"
+
+# 错误处理
+on_error:
+  - action: log
+    message: "每日状态推送失败: {{ error.message }}"
+  - action: notify
+    channel: dingtalk
+    message: "⚠️ 每日状态推送执行失败，请检查系统日志"
+
+# 成功回调
+on_success:
+  - action: log
+    message: "每日状态推送完成"

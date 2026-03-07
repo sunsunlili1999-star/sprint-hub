@@ -1,0 +1,49 @@
+# Projex 智能周报生成工作流
+# 每周五下午 17:00 自动执行
+
+name: weekly-report
+description: 智能周报生成 - 自动汇总本周进度并发送到钉钉
+
+# 触发条件
+triggers:
+  # 定时触发：每周五下午 17:00
+  - type: cron
+    cron: "0 17 * * 5"  # 分 时 日 月 周(5=周五)
+    timezone: "Asia/Shanghai"
+  
+  # 手动触发
+  - type: manual
+    name: "手动生成周报"
+
+# 工作流步骤
+steps:
+  # 步骤 1: 生成周报
+  - id: generate_report
+    name: "生成周报"
+    skill: projex-status
+    action: generate_weekly_report
+    params:
+      format: "markdown"
+    
+  # 步骤 2: 发送到钉钉
+  - id: send_dingtalk
+    name: "发送周报到钉钉"
+    skill: dingtalk-notify
+    action: send_message
+    params:
+      title: "📝 项目周报"
+      content: "{{ steps.generate_report.content }}"
+      at_all: false
+
+# 错误处理
+on_error:
+  - action: log
+    message: "周报生成失败: {{ error.message }}"
+  - action: notify
+    channel: dingtalk
+    message: "⚠️ 周报生成失败，请手动检查"
+
+# 成功回调
+on_success:
+  - action: log
+    message: "周报已生成并发送"

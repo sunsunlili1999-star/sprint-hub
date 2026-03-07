@@ -1,0 +1,95 @@
+{
+  "name": "dingtalk-notify",
+  "version": "1.0.0",
+  "description": "发送钉钉消息通知，支持 Markdown 格式和 @成员",
+  "author": "Projex Team",
+  "homepage": "https://github.com/your-org/projex",
+  "license": "MIT",
+  "skills": [
+    {
+      "name": "send_message",
+      "description": "发送钉钉消息",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "消息标题"
+          },
+          "content": {
+            "type": "string",
+            "description": "消息内容，支持 Markdown 格式",
+            "required": true
+          },
+          "at_mobiles": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "@指定成员的手机号列表"
+          },
+          "at_all": {
+            "type": "boolean",
+            "description": "是否 @所有人",
+            "default": false
+          }
+        },
+        "required": ["content"]
+      }
+    },
+    {
+      "name": "send_daily_status",
+      "description": "发送每日状态播报",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sprint_status": {
+            "type": "string",
+            "description": "迭代状态内容"
+          },
+          "release_status": {
+            "type": "string",
+            "description": "发布状态内容"
+          }
+        }
+      }
+    },
+    {
+      "name": "send_risk_alert",
+      "description": "发送风险告警",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "risk_content": {
+            "type": "string",
+            "description": "风险内容",
+            "required": true
+          },
+          "level": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": "风险等级"
+          }
+        },
+        "required": ["risk_content"]
+      }
+    }
+  ],
+  "config": {
+    "webhook_url": {
+      "type": "string",
+      "description": "钉钉机器人 Webhook 地址",
+      "required": true,
+      "secret": true
+    },
+    "secret": {
+      "type": "string",
+      "description": "钉钉机器人加签密钥",
+      "required": false,
+      "secret": true
+    },
+    "default_at_mobiles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "默认 @的手机号列表"
+    }
+  }
+}

@@ -307,11 +307,6 @@ const menuItems: MenuProps["items"] = [
     label: "智能待办",
   },
   {
-    key: "/calendar",
-    icon: <CalendarOutlined />,
-    label: "日历",
-  },
-  {
     type: "divider",
   },
   {
@@ -323,6 +318,12 @@ const menuItems: MenuProps["items"] = [
     key: "/settings",
     icon: <SettingOutlined />,
     label: "设置",
+    children: [
+      {
+        key: "/settings/integrations",
+        label: "集成配置",
+      },
+    ],
   },
 ]
 

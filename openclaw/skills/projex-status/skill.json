@@ -1,0 +1,92 @@
+{
+  "name": "projex-status",
+  "version": "1.0.0",
+  "description": "获取 Projex 项目状态，包括迭代进度、发布状态和风险分析",
+  "author": "Projex Team",
+  "homepage": "https://github.com/your-org/projex",
+  "license": "MIT",
+  "skills": [
+    {
+      "name": "get_sprint_status",
+      "description": "获取所有进行中迭代的状态，包括进度、风险等级和 AI 建议",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "description": "项目 ID，留空则获取所有项目"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_release_status",
+      "description": "获取所有待发布版本的状态",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "description": "项目 ID，留空则获取所有项目"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_risk_analysis",
+      "description": "获取项目风险分析报告，包括风险等级、详情和 AI 推荐方案",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "threshold": {
+            "type": "number",
+            "description": "风险阈值，只返回超过该值的风险项",
+            "default": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "generate_daily_report",
+      "description": "生成项目日报，包括今日完成、进行中、明日计划等",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": ["json", "markdown"],
+            "default": "markdown"
+          }
+        }
+      }
+    },
+    {
+      "name": "generate_weekly_report",
+      "description": "生成项目周报，包括本周总结、里程碑进度、团队工作量等",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": ["json", "markdown"],
+            "default": "markdown"
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "projex_api_url": {
+      "type": "string",
+      "description": "Projex API 地址",
+      "required": true,
+      "default": "http://localhost:3000"
+    },
+    "projex_api_key": {
+      "type": "string",
+      "description": "Projex API Key",
+      "required": false,
+      "secret": true
+    }
+  }
+}

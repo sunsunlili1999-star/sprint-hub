@@ -50,11 +50,6 @@ const navItems = [
     href: "/todos",
     icon: ListTodo,
   },
-  {
-    title: "日历",
-    href: "/calendar",
-    icon: Calendar,
-  },
 ]
 
 const bottomNavItems = [

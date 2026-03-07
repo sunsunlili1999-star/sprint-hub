@@ -1,0 +1,69 @@
+# Projex 实时风险告警工作流
+# 每小时检查一次，发现高风险立即告警
+
+name: risk-alert
+description: 实时风险告警 - 检测到高风险时立即推送钉钉
+
+# 触发条件
+triggers:
+  # 定时触发：每小时检查一次
+  - type: cron
+    cron: "0 * * * *"  # 每小时整点
+    timezone: "Asia/Shanghai"
+  
+  # Webhook 触发（可由 Projex 主动调用）
+  - type: webhook
+    path: "/risk-alert"
+    method: "POST"
+  
+  # 手动触发
+  - type: manual
+    name: "手动检查风险"
+
+# 配置
+config:
+  risk_threshold: 60  # 风险阈值，超过此值触发告警
+
+# 工作流步骤
+steps:
+  # 步骤 1: 获取风险分析
+  - id: analyze_risks
+    name: "分析项目风险"
+    skill: projex-status
+    action: get_risk_analysis
+    params:
+      threshold: "{{ config.risk_threshold }}"
+    
+  # 步骤 2: 条件判断 - 是否存在高风险
+  - id: check_risk
+    name: "检查是否存在高风险"
+    type: condition
+    condition: "{{ steps.analyze_risks.hasHighRisk == true }}"
+    
+    # 如果存在高风险，执行以下步骤
+    then:
+      # 步骤 2.1: 发送风险告警
+      - id: send_alert
+        name: "发送风险告警"
+        skill: dingtalk-notify
+        action: send_risk_alert
+        params:
+          risk_content: "{{ steps.analyze_risks.content }}"
+          level: "high"
+    
+    # 如果没有高风险
+    else:
+      - id: log_safe
+        name: "记录安全状态"
+        type: log
+        message: "风险检查完成，当前无高风险项"
+
+# 错误处理
+on_error:
+  - action: log
+    message: "风险检查失败: {{ error.message }}"
+
+# 成功回调
+on_success:
+  - action: log
+    message: "风险检查完成"
