@@ -32,7 +32,6 @@ import {
   EditOutlined,
   EyeOutlined,
   ThunderboltOutlined,
-  RobotOutlined,
   HistoryOutlined,
   MoreOutlined,
   BugOutlined,
@@ -42,6 +41,7 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import "dayjs/locale/zh-cn"
 import { useBreadcrumb } from "@/components/layout/main-layout"
+import PilotIcon from "@/components/ui/PilotIcon"
 
 dayjs.extend(relativeTime)
 dayjs.locale("zh-cn")
@@ -297,7 +297,7 @@ export default function ReleasesPage() {
               {release.aiRiskScore && (
                 <Tooltip title="AI 风险评分">
                   <Tag
-                    icon={<RobotOutlined />}
+                    icon={<PilotIcon style={{ fontSize: 12 }} />}
                     style={{
                       margin: 0,
                       padding: "4px 10px",

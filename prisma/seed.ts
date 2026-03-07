@@ -58,17 +58,17 @@ async function main() {
   await seedUsers(prisma)
   console.log('')
 
-  // 创建产品数据
-  await seedDataPlatform(prisma)
+  // 创建产品数据（按顺序：标签平台、小康、知识平台、数据中台）
+  await seedTagPlatform(prisma)
+  console.log('')
+
+  await seedXiaokangApp(prisma)
   console.log('')
 
   await seedKnowledgePlatform(prisma)
   console.log('')
 
-  await seedTagPlatform(prisma)
-  console.log('')
-
-  await seedXiaokangApp(prisma)
+  await seedDataPlatform(prisma)
   console.log('')
 
   // 创建项目（需要在产品之后，因为要关联产品）

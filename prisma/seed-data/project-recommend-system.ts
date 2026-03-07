@@ -68,118 +68,37 @@ export async function seedRecommendSystemProject(prisma: PrismaClient) {
         id: 'sprint-recommend-003',
         name: 'Sprint 3 - 场景接入',
         projectId: project.id,
-        status: SprintStatus.IN_PROGRESS,
-        startDate: new Date('2026-03-05'),
-        endDate: new Date('2026-04-05'),
+        status: SprintStatus.PLANNING,
+        startDate: new Date('2026-03-21'),
+        endDate: new Date('2026-04-20'),
         goal: '完成小康App和标签平台的推荐场景接入',
       },
     }),
   ])
 
-  // 创建项目需求
-  const requirements = await Promise.all([
-    prisma.workItem.create({
-      data: {
-        id: 'req-recommend-001',
-        title: '用户行为数据采集服务',
-        description: '构建用户行为数据采集服务，收集用户在小康App和知识平台上的浏览、点击、搜索、收藏等行为数据，为推荐算法提供数据基础。',
-        type: WorkItemType.REQUIREMENT,
-        priority: Priority.P0,
-        currentPhase: Phase.TESTING,
-        devStatus: 'COMPLETED',
-        projectId: project.id,
-        sprintId: sprints[0].id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-zhangsan',
-        estimatedHours: 32,
-        actualHours: 28,
-      },
-    }),
-    prisma.workItem.create({
-      data: {
-        id: 'req-recommend-002',
-        title: '用户画像构建',
-        description: '基于用户基础信息和行为数据，构建用户健康画像，包括健康关注点、疾病史、用药习惯、内容偏好等维度。',
-        type: WorkItemType.REQUIREMENT,
-        priority: Priority.P0,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'IN_PROGRESS',
-        projectId: project.id,
-        sprintId: sprints[1].id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-lisi',
-        estimatedHours: 40,
-      },
-    }),
-    prisma.workItem.create({
-      data: {
-        id: 'req-recommend-003',
-        title: '协同过滤推荐算法',
-        description: '实现基于用户行为的协同过滤推荐算法，支持基于用户的协同过滤(User-CF)和基于物品的协同过滤(Item-CF)。',
-        type: WorkItemType.REQUIREMENT,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'IN_PROGRESS',
-        projectId: project.id,
-        sprintId: sprints[1].id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-zhangsan',
-        estimatedHours: 48,
-      },
-    }),
-    prisma.workItem.create({
-      data: {
-        id: 'req-recommend-004',
-        title: '内容推荐算法',
-        description: '实现基于内容的推荐算法，根据健康知识、文章的内容特征和用户兴趣进行匹配推荐。',
-        type: WorkItemType.REQUIREMENT,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        sprintId: sprints[1].id,
-        creatorId: 'user-admin',
-        estimatedHours: 40,
-      },
-    }),
-    prisma.workItem.create({
-      data: {
-        id: 'req-recommend-005',
-        title: '小康App推荐接口',
-        description: '为小康App提供推荐API接口，支持首页内容推荐、相关文章推荐、医生推荐等场景。',
-        type: WorkItemType.REQUIREMENT,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        sprintId: sprints[2].id,
-        creatorId: 'user-zhaoliu',
-        productId: 'product-xiaokang-app',
-        estimatedHours: 24,
-      },
-    }),
-    prisma.workItem.create({
-      data: {
-        id: 'req-recommend-006',
-        title: '标签平台推荐接口',
-        description: '为标签平台提供推荐API接口，支持用户标签推荐、相似标签推荐、热门标签推荐等场景。',
-        type: WorkItemType.REQUIREMENT,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        sprintId: sprints[2].id,
-        creatorId: 'user-chenqi',
-        productId: 'product-tag-platform',
-        estimatedHours: 24,
-      },
-    }),
-  ])
+  // ==================== Sprint 1 需求 ====================
+  const sprint1Req = await prisma.workItem.create({
+    data: {
+      id: 'req-recommend-001',
+      title: '用户行为数据采集服务',
+      description: '构建用户行为数据采集服务，收集用户在小康App和知识平台上的浏览、点击、搜索、收藏等行为数据，为推荐算法提供数据基础。',
+      type: WorkItemType.REQUIREMENT,
+      priority: Priority.P0,
+      currentPhase: Phase.TESTING,
+      devStatus: 'COMPLETED',
+      projectId: project.id,
+      sprintId: sprints[0].id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 32,
+      actualHours: 28,
+    },
+  })
 
-  // 创建一些任务（子工作项）
-  const tasks = await Promise.all([
-    prisma.workItem.create({
-      data: {
+  // Sprint 1 任务
+  await prisma.workItem.createMany({
+    data: [
+      {
         id: 'task-recommend-001',
         title: '设计数据采集SDK',
         type: WorkItemType.TASK,
@@ -187,15 +106,14 @@ export async function seedRecommendSystemProject(prisma: PrismaClient) {
         currentPhase: Phase.DEVELOPMENT,
         devStatus: 'COMPLETED',
         projectId: project.id,
-        parentId: requirements[0].id,
+        sprintId: sprints[0].id,
+        parentId: sprint1Req.id,
         creatorId: 'user-zhangsan',
         devOwnerId: 'user-zhangsan',
         estimatedHours: 8,
         actualHours: 6,
       },
-    }),
-    prisma.workItem.create({
-      data: {
+      {
         id: 'task-recommend-002',
         title: '实现数据上报接口',
         type: WorkItemType.TASK,
@@ -203,316 +121,992 @@ export async function seedRecommendSystemProject(prisma: PrismaClient) {
         currentPhase: Phase.DEVELOPMENT,
         devStatus: 'COMPLETED',
         projectId: project.id,
-        parentId: requirements[0].id,
+        sprintId: sprints[0].id,
+        parentId: sprint1Req.id,
         creatorId: 'user-zhangsan',
         devOwnerId: 'user-zhangsan',
         estimatedHours: 16,
         actualHours: 14,
       },
-    }),
-    prisma.workItem.create({
-      data: {
-        id: 'task-recommend-003',
-        title: '用户基础标签提取',
-        type: WorkItemType.TASK,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'IN_PROGRESS',
-        projectId: project.id,
-        parentId: requirements[1].id,
-        creatorId: 'user-lisi',
-        devOwnerId: 'user-lisi',
-        estimatedHours: 16,
-      },
-    }),
-  ])
-
-  // 将小康App的需求同步到推荐系统项目（关联项目和迭代）
-  await prisma.workItem.updateMany({
-    where: {
-      productId: 'product-xiaokang-app',
-      type: WorkItemType.REQUIREMENT,
-    },
-    data: {
-      projectId: project.id,
-      sprintId: sprints[1].id,  // 分配到 Sprint 2 - 推荐算法
-    },
+    ],
   })
 
-  // ==================== Sprint 2 - 标签管理功能 ====================
-  // 创建标签管理功能需求（属于标签平台产品）
-  const tagManagementReq = await prisma.workItem.create({
+  // ==================== Sprint 2 需求和任务 ====================
+  // Sprint 2 时间范围: 2026-02-20 ~ 2026-03-20 (28天)
+
+  // 需求1: 用户画像构建 (2.20-3.1)
+  const req2 = await prisma.workItem.create({
     data: {
-      id: 'req-tag-management',
-      title: '标签管理功能',
-      description: '实现标签平台的核心标签管理功能，包括标签列表主体分类、查询列表、新建标签-数据表映射等功能。为推荐系统提供标签数据支撑。',
+      id: 'req-recommend-002',
+      title: '用户画像构建',
+      description: '基于用户基础信息和行为数据，构建用户健康画像，包括健康关注点、疾病史、用药习惯、内容偏好等维度。',
       type: WorkItemType.REQUIREMENT,
-      requirementType: RequirementType.FEATURE,
       priority: Priority.P0,
       currentPhase: Phase.DEVELOPMENT,
       devStatus: 'IN_PROGRESS',
       projectId: project.id,
-      productId: 'product-tag-platform',
-      moduleId: 'module-tag-list',
-      sprintId: sprints[1].id,  // Sprint 2 - 推荐算法
+      sprintId: sprints[1].id,
       creatorId: 'user-admin',
-      devOwnerId: 'user-admin',
-      estimatedHours: 80,
-      plannedStartDate: new Date('2026-02-01'),
-      plannedEndDate: new Date('2026-02-14'),
+      devOwnerId: 'user-lisi',
+      estimatedHours: 40,
+      plannedStartDate: new Date('2026-02-20'),
+      plannedEndDate: new Date('2026-03-01'),
     },
   })
 
-  // 创建任务1：实现标签列表主体分类功能
-  const task1 = await prisma.workItem.create({
+  // 用户画像任务
+  const task2_1 = await prisma.workItem.create({
     data: {
-      id: 'task-tag-category',
-      title: '实现标签列表主体分类功能',
-      description: '实现标签按主体类型（用户、设备、订单等）进行分类展示，支持分类树形结构。',
+      id: 'task-user-profile-model',
+      title: '用户画像数据模型设计',
       type: WorkItemType.TASK,
-      priority: Priority.P1,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'COMPLETED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: req2.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 8,
+      actualHours: 6,
+      plannedStartDate: new Date('2026-02-20'),
+      plannedEndDate: new Date('2026-02-21'),
+    },
+  })
+
+  // 任务下的工作项
+  const wi2_1_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-user-profile-api',
+      title: '用户画像接口开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
       currentPhase: Phase.DEVELOPMENT,
       devStatus: 'IN_PROGRESS',
       projectId: project.id,
-      productId: 'product-tag-platform',
-      moduleId: 'module-tag-list',
       sprintId: sprints[1].id,
-      parentId: tagManagementReq.id,
-      creatorId: 'user-admin',
-      devOwnerId: 'user-admin',
-      estimatedHours: 24,
-      plannedStartDate: new Date('2026-02-01'),
-      plannedEndDate: new Date('2026-02-05'),
+      parentId: task2_1.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-02-22'),
+      plannedEndDate: new Date('2026-02-25'),
     },
   })
 
-  // 任务1的工作项
-  await prisma.workItem.createMany({
-    data: [
-      {
-        id: 'workitem-tag-category-page',
-        title: '主体分类页面开发',
-        description: '开发主体分类的前端页面，包括分类树形组件、分类筛选器等。',
-        type: WorkItemType.TASK,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'COMPLETED',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task1.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-admin',
-        estimatedHours: 8,
-        actualHours: 7,
-      },
-      {
-        id: 'workitem-tag-category-api',
-        title: '主体分类接口开发',
-        description: '开发主体分类的后端API，包括分类列表、分类详情、分类CRUD等接口。',
-        type: WorkItemType.TASK,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'COMPLETED',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task1.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-lisi',  // 后端任务分配给李四
-        estimatedHours: 8,
-        actualHours: 10,
-      },
-      {
-        id: 'workitem-tag-category-debug',
-        title: '主体分类接口联调',
-        description: '前后端接口联调，确保分类功能正常工作。',
-        type: WorkItemType.TASK,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'IN_PROGRESS',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task1.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-admin',
-        estimatedHours: 4,
-      },
-    ],
-  })
-
-  // 创建任务2：实现查询列表功能
-  const task2 = await prisma.workItem.create({
+  const wi2_1_page = await prisma.workItem.create({
     data: {
-      id: 'task-tag-query-list',
-      title: '实现查询列表功能',
-      description: '实现标签查询列表功能，支持多条件筛选、排序、分页。',
+      id: 'wi-user-profile-page',
+      title: '用户画像页面开发',
       type: WorkItemType.TASK,
       priority: Priority.P1,
       currentPhase: Phase.DEVELOPMENT,
-      devStatus: 'IN_PROGRESS',
+      devStatus: 'NOT_STARTED',
       projectId: project.id,
-      productId: 'product-tag-platform',
-      moduleId: 'module-tag-list',
       sprintId: sprints[1].id,
-      parentId: tagManagementReq.id,
+      parentId: task2_1.id,
       creatorId: 'user-admin',
-      devOwnerId: 'user-admin',
-      estimatedHours: 28,
-      plannedStartDate: new Date('2026-02-03'),
-      plannedEndDate: new Date('2026-02-08'),
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 10,
+      plannedStartDate: new Date('2026-02-22'),
+      plannedEndDate: new Date('2026-02-25'),
     },
   })
 
-  // 任务2的工作项
-  await prisma.workItem.createMany({
-    data: [
-      {
-        id: 'workitem-tag-query-page',
-        title: '查询列表页面开发',
-        description: '开发标签查询列表的前端页面，包括筛选表单、数据表格、分页组件等。',
-        type: WorkItemType.TASK,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'IN_PROGRESS',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task2.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-admin',
-        estimatedHours: 12,
-      },
-      {
-        id: 'workitem-tag-query-api',
-        title: '查询列表接口开发',
-        description: '开发标签查询列表的后端API，支持多条件筛选、排序、分页查询。',
-        type: WorkItemType.TASK,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task2.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-lisi',  // 后端任务分配给李四
-        estimatedHours: 10,
-      },
-      {
-        id: 'workitem-tag-query-debug',
-        title: '查询列表接口联调',
-        description: '前后端接口联调，确保列表筛选、排序、分页功能正常工作。',
-        type: WorkItemType.TASK,
-        priority: Priority.P1,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task2.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-admin',
-        estimatedHours: 4,
-      },
-    ],
-  })
-
-  // 创建任务3：实现新建标签-数据表映射功能
-  const task3 = await prisma.workItem.create({
+  const wi2_1_debug = await prisma.workItem.create({
     data: {
-      id: 'task-tag-mapping',
-      title: '实现新建标签-数据表映射功能',
-      description: '实现新建标签时与数据表的映射配置，支持选择数据源、配置字段映射关系。',
+      id: 'wi-user-profile-debug',
+      title: '用户画像接口联调',
       type: WorkItemType.TASK,
       priority: Priority.P0,
       currentPhase: Phase.DEVELOPMENT,
       devStatus: 'NOT_STARTED',
       projectId: project.id,
-      productId: 'product-tag-platform',
-      moduleId: 'module-tag-list',
       sprintId: sprints[1].id,
-      parentId: tagManagementReq.id,
+      parentId: task2_1.id,
       creatorId: 'user-admin',
-      devOwnerId: 'user-admin',
-      estimatedHours: 32,
-      plannedStartDate: new Date('2026-02-07'),
-      plannedEndDate: new Date('2026-02-14'),
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-02-26'),
+      plannedEndDate: new Date('2026-02-27'),
     },
   })
 
-  // 任务3的工作项
-  await prisma.workItem.createMany({
+  // 需求2: 协同过滤推荐算法 (3.1-3.10)
+  const req3 = await prisma.workItem.create({
+    data: {
+      id: 'req-recommend-003',
+      title: '协同过滤推荐算法',
+      description: '实现基于用户行为的协同过滤推荐算法，支持基于用户的协同过滤(User-CF)和基于物品的协同过滤(Item-CF)。',
+      type: WorkItemType.REQUIREMENT,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'IN_PROGRESS',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 48,
+      plannedStartDate: new Date('2026-03-01'),
+      plannedEndDate: new Date('2026-03-10'),
+    },
+  })
+
+  // 协同过滤任务
+  const task3_1 = await prisma.workItem.create({
+    data: {
+      id: 'task-cf-user',
+      title: 'User-CF算法实现',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'IN_PROGRESS',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: req3.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 20,
+      plannedStartDate: new Date('2026-03-01'),
+      plannedEndDate: new Date('2026-03-05'),
+    },
+  })
+
+  const wi3_1_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-cf-user-api',
+      title: 'User-CF推荐接口开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'IN_PROGRESS',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task3_1.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-03-01'),
+      plannedEndDate: new Date('2026-03-03'),
+    },
+  })
+
+  const wi3_1_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-cf-user-page',
+      title: 'User-CF推荐展示页面',
+      type: WorkItemType.TASK,
+      priority: Priority.P2,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task3_1.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 6,
+      plannedStartDate: new Date('2026-03-03'),
+      plannedEndDate: new Date('2026-03-04'),
+    },
+  })
+
+  const wi3_1_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-cf-user-debug',
+      title: 'User-CF接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task3_1.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-03-04'),
+      plannedEndDate: new Date('2026-03-05'),
+    },
+  })
+
+  const task3_2 = await prisma.workItem.create({
+    data: {
+      id: 'task-cf-item',
+      title: 'Item-CF算法实现',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: req3.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 18,
+      plannedStartDate: new Date('2026-03-06'),
+      plannedEndDate: new Date('2026-03-10'),
+    },
+  })
+
+  const wi3_2_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-cf-item-api',
+      title: 'Item-CF推荐接口开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task3_2.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 10,
+      plannedStartDate: new Date('2026-03-06'),
+      plannedEndDate: new Date('2026-03-08'),
+    },
+  })
+
+  const wi3_2_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-cf-item-page',
+      title: 'Item-CF推荐展示页面',
+      type: WorkItemType.TASK,
+      priority: Priority.P2,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task3_2.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-03-08'),
+      plannedEndDate: new Date('2026-03-09'),
+    },
+  })
+
+  const wi3_2_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-cf-item-debug',
+      title: 'Item-CF接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task3_2.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-03-09'),
+      plannedEndDate: new Date('2026-03-10'),
+    },
+  })
+
+  // 需求3: 内容推荐算法 (3.10-3.20)
+  const req4 = await prisma.workItem.create({
+    data: {
+      id: 'req-recommend-004',
+      title: '内容推荐算法',
+      description: '实现基于内容的推荐算法，根据健康知识、文章的内容特征和用户兴趣进行匹配推荐。',
+      type: WorkItemType.REQUIREMENT,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      creatorId: 'user-admin',
+      estimatedHours: 40,
+      plannedStartDate: new Date('2026-03-10'),
+      plannedEndDate: new Date('2026-03-20'),
+    },
+  })
+
+  const task4_1 = await prisma.workItem.create({
+    data: {
+      id: 'task-content-feature',
+      title: '内容特征提取',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: req4.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 16,
+      plannedStartDate: new Date('2026-03-10'),
+      plannedEndDate: new Date('2026-03-14'),
+    },
+  })
+
+  const wi4_1_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-content-feature-api',
+      title: '内容特征提取接口开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task4_1.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-03-10'),
+      plannedEndDate: new Date('2026-03-13'),
+    },
+  })
+
+  const wi4_1_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-content-feature-debug',
+      title: '内容特征提取接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task4_1.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-03-13'),
+      plannedEndDate: new Date('2026-03-14'),
+    },
+  })
+
+  const task4_2 = await prisma.workItem.create({
+    data: {
+      id: 'task-content-match',
+      title: '内容匹配推荐',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: req4.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 20,
+      plannedStartDate: new Date('2026-03-14'),
+      plannedEndDate: new Date('2026-03-20'),
+    },
+  })
+
+  const wi4_2_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-content-match-api',
+      title: '内容匹配推荐接口开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task4_2.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 10,
+      plannedStartDate: new Date('2026-03-14'),
+      plannedEndDate: new Date('2026-03-17'),
+    },
+  })
+
+  const wi4_2_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-content-match-page',
+      title: '内容推荐展示页面',
+      type: WorkItemType.TASK,
+      priority: Priority.P2,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task4_2.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 6,
+      plannedStartDate: new Date('2026-03-17'),
+      plannedEndDate: new Date('2026-03-18'),
+    },
+  })
+
+  const wi4_2_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-content-match-debug',
+      title: '内容匹配推荐接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[1].id,
+      parentId: task4_2.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-03-18'),
+      plannedEndDate: new Date('2026-03-20'),
+    },
+  })
+
+  // ==================== Sprint 3 需求 (智能规划假数据) ====================
+  // 模拟从智能规划导入的电商平台需求
+
+  // 需求1: 用户登录与注册模块
+  const req5 = await prisma.workItem.create({
+    data: {
+      id: 'req-ecommerce-login',
+      title: '用户登录与注册模块',
+      description: '支持手机号、邮箱、第三方登录注册，为电商平台提供完整的用户认证体系。',
+      type: WorkItemType.REQUIREMENT,
+      requirementType: RequirementType.FEATURE,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      creatorId: 'user-zhaoliu',
+      estimatedHours: 52,
+      plannedStartDate: new Date('2026-03-21'),
+      plannedEndDate: new Date('2026-03-28'),
+    },
+  })
+
+  const task5_1 = await prisma.workItem.create({
+    data: {
+      id: 'task-login-ui',
+      title: '登录注册UI开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: req5.id,
+      creatorId: 'user-zhaoliu',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 16,
+      plannedStartDate: new Date('2026-03-21'),
+      plannedEndDate: new Date('2026-03-23'),
+    },
+  })
+
+  const wi5_1_login_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-login-page',
+      title: '登录页面UI开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task5_1.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 8,
+      plannedStartDate: new Date('2026-03-21'),
+      plannedEndDate: new Date('2026-03-22'),
+    },
+  })
+
+  const wi5_1_register_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-register-page',
+      title: '注册流程UI开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task5_1.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 8,
+      plannedStartDate: new Date('2026-03-22'),
+      plannedEndDate: new Date('2026-03-23'),
+    },
+  })
+
+  const task5_2 = await prisma.workItem.create({
+    data: {
+      id: 'task-login-api',
+      title: '登录注册API开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: req5.id,
+      creatorId: 'user-zhaoliu',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 28,
+      plannedStartDate: new Date('2026-03-21'),
+      plannedEndDate: new Date('2026-03-26'),
+    },
+  })
+
+  const wi5_2_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-login-register-api',
+      title: '登录注册API开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task5_2.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 16,
+      plannedStartDate: new Date('2026-03-21'),
+      plannedEndDate: new Date('2026-03-24'),
+    },
+  })
+
+  const wi5_2_third_party = await prisma.workItem.create({
+    data: {
+      id: 'wi-third-party-login',
+      title: '第三方登录集成',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task5_2.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-03-24'),
+      plannedEndDate: new Date('2026-03-26'),
+    },
+  })
+
+  const wi5_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-login-debug',
+      title: '登录注册接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task5_2.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-03-26'),
+      plannedEndDate: new Date('2026-03-27'),
+    },
+  })
+
+  // 需求2: 商品展示模块
+  const req6 = await prisma.workItem.create({
+    data: {
+      id: 'req-ecommerce-product',
+      title: '商品展示模块',
+      description: '商品列表、详情、搜索、分类功能，支持多维度筛选和智能搜索。',
+      type: WorkItemType.REQUIREMENT,
+      requirementType: RequirementType.FEATURE,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      creatorId: 'user-zhaoliu',
+      estimatedHours: 80,
+      plannedStartDate: new Date('2026-03-28'),
+      plannedEndDate: new Date('2026-04-08'),
+    },
+  })
+
+  const task6_1 = await prisma.workItem.create({
+    data: {
+      id: 'task-product-list',
+      title: '商品列表功能',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: req6.id,
+      creatorId: 'user-zhaoliu',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 32,
+      plannedStartDate: new Date('2026-03-28'),
+      plannedEndDate: new Date('2026-04-02'),
+    },
+  })
+
+  const wi6_1_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-product-list-page',
+      title: '商品列表页开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task6_1.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-03-28'),
+      plannedEndDate: new Date('2026-03-30'),
+    },
+  })
+
+  const wi6_1_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-product-list-api',
+      title: '商品列表API开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task6_1.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 16,
+      plannedStartDate: new Date('2026-03-28'),
+      plannedEndDate: new Date('2026-04-01'),
+    },
+  })
+
+  const wi6_1_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-product-list-debug',
+      title: '商品列表接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task6_1.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-04-01'),
+      plannedEndDate: new Date('2026-04-02'),
+    },
+  })
+
+  const task6_2 = await prisma.workItem.create({
+    data: {
+      id: 'task-product-detail',
+      title: '商品详情功能',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: req6.id,
+      creatorId: 'user-zhaoliu',
+      devOwnerId: 'user-admin',
+      estimatedHours: 28,
+      plannedStartDate: new Date('2026-04-02'),
+      plannedEndDate: new Date('2026-04-06'),
+    },
+  })
+
+  const wi6_2_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-product-detail-page',
+      title: '商品详情页开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task6_2.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 16,
+      plannedStartDate: new Date('2026-04-02'),
+      plannedEndDate: new Date('2026-04-04'),
+    },
+  })
+
+  const wi6_2_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-product-detail-api',
+      title: '商品详情API开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task6_2.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 8,
+      plannedStartDate: new Date('2026-04-02'),
+      plannedEndDate: new Date('2026-04-04'),
+    },
+  })
+
+  const wi6_2_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-product-detail-debug',
+      title: '商品详情接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task6_2.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-04-04'),
+      plannedEndDate: new Date('2026-04-06'),
+    },
+  })
+
+  // 需求3: 购物车模块
+  const req7 = await prisma.workItem.create({
+    data: {
+      id: 'req-ecommerce-cart',
+      title: '购物车模块',
+      description: '添加、修改、删除商品，支持商品数量调整和批量操作。',
+      type: WorkItemType.REQUIREMENT,
+      requirementType: RequirementType.FEATURE,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      creatorId: 'user-zhaoliu',
+      estimatedHours: 36,
+      plannedStartDate: new Date('2026-04-08'),
+      plannedEndDate: new Date('2026-04-14'),
+    },
+  })
+
+  const task7_1 = await prisma.workItem.create({
+    data: {
+      id: 'task-cart-function',
+      title: '购物车核心功能',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: req7.id,
+      creatorId: 'user-zhaoliu',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 28,
+      plannedStartDate: new Date('2026-04-08'),
+      plannedEndDate: new Date('2026-04-12'),
+    },
+  })
+
+  const wi7_1_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-cart-page',
+      title: '购物车页面开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task7_1.id,
+      creatorId: 'user-zhangsan',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-04-08'),
+      plannedEndDate: new Date('2026-04-10'),
+    },
+  })
+
+  const wi7_1_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-cart-api',
+      title: '购物车API开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task7_1.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-04-08'),
+      plannedEndDate: new Date('2026-04-10'),
+    },
+  })
+
+  const wi7_1_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-cart-debug',
+      title: '购物车接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P0,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task7_1.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-zhangsan',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-04-10'),
+      plannedEndDate: new Date('2026-04-12'),
+    },
+  })
+
+  // 需求4: 订单管理模块
+  const req8 = await prisma.workItem.create({
+    data: {
+      id: 'req-ecommerce-order',
+      title: '订单管理模块',
+      description: '创建订单、订单列表、状态跟踪，完整的订单生命周期管理。',
+      type: WorkItemType.REQUIREMENT,
+      requirementType: RequirementType.FEATURE,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      creatorId: 'user-zhaoliu',
+      estimatedHours: 58,
+      plannedStartDate: new Date('2026-04-14'),
+      plannedEndDate: new Date('2026-04-20'),
+    },
+  })
+
+  const task8_1 = await prisma.workItem.create({
+    data: {
+      id: 'task-order-create',
+      title: '订单创建流程',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: req8.id,
+      creatorId: 'user-zhaoliu',
+      devOwnerId: 'user-admin',
+      estimatedHours: 32,
+      plannedStartDate: new Date('2026-04-14'),
+      plannedEndDate: new Date('2026-04-18'),
+    },
+  })
+
+  const wi8_1_page = await prisma.workItem.create({
+    data: {
+      id: 'wi-order-create-page',
+      title: '订单创建流程开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task8_1.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 12,
+      plannedStartDate: new Date('2026-04-14'),
+      plannedEndDate: new Date('2026-04-16'),
+    },
+  })
+
+  const wi8_1_api = await prisma.workItem.create({
+    data: {
+      id: 'wi-order-api',
+      title: '订单API开发',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task8_1.id,
+      creatorId: 'user-lisi',
+      devOwnerId: 'user-lisi',
+      estimatedHours: 16,
+      plannedStartDate: new Date('2026-04-14'),
+      plannedEndDate: new Date('2026-04-17'),
+    },
+  })
+
+  const wi8_1_debug = await prisma.workItem.create({
+    data: {
+      id: 'wi-order-debug',
+      title: '订单接口联调',
+      type: WorkItemType.TASK,
+      priority: Priority.P1,
+      currentPhase: Phase.DEVELOPMENT,
+      devStatus: 'NOT_STARTED',
+      projectId: project.id,
+      sprintId: sprints[2].id,
+      parentId: task8_1.id,
+      creatorId: 'user-admin',
+      devOwnerId: 'user-admin',
+      estimatedHours: 4,
+      plannedStartDate: new Date('2026-04-17'),
+      plannedEndDate: new Date('2026-04-18'),
+    },
+  })
+
+  // ==================== 添加工作项依赖关系 ====================
+  // 接口联调依赖接口开发（页面开发不依赖）
+  
+  await prisma.workItemDependency.createMany({
     data: [
-      {
-        id: 'workitem-tag-mapping-page',
-        title: '标签映射配置页面开发',
-        description: '开发新建标签时的数据表映射配置页面，包括数据源选择、字段拖拽映射组件。',
-        type: WorkItemType.TASK,
-        priority: Priority.P0,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task3.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-admin',
-        estimatedHours: 16,
-      },
-      {
-        id: 'workitem-tag-mapping-api',
-        title: '标签映射配置接口开发',
-        description: '开发标签与数据表映射关系的后端API，包括数据源列表、表结构获取、映射保存等接口。',
-        type: WorkItemType.TASK,
-        priority: Priority.P0,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task3.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-lisi',  // 后端任务分配给李四
-        estimatedHours: 12,
-      },
-      {
-        id: 'workitem-tag-mapping-debug',
-        title: '标签映射配置接口联调',
-        description: '前后端接口联调，确保映射配置功能完整可用。',
-        type: WorkItemType.TASK,
-        priority: Priority.P0,
-        currentPhase: Phase.DEVELOPMENT,
-        devStatus: 'NOT_STARTED',
-        projectId: project.id,
-        productId: 'product-tag-platform',
-        moduleId: 'module-tag-list',
-        sprintId: sprints[1].id,
-        parentId: task3.id,
-        creatorId: 'user-admin',
-        devOwnerId: 'user-admin',
-        estimatedHours: 4,
-      },
+      // Sprint 2 依赖
+      { workItemId: wi2_1_debug.id, dependsOnId: wi2_1_api.id, createdById: 'user-admin' },
+      { workItemId: wi3_1_debug.id, dependsOnId: wi3_1_api.id, createdById: 'user-admin' },
+      { workItemId: wi3_2_debug.id, dependsOnId: wi3_2_api.id, createdById: 'user-admin' },
+      { workItemId: wi4_1_debug.id, dependsOnId: wi4_1_api.id, createdById: 'user-admin' },
+      { workItemId: wi4_2_debug.id, dependsOnId: wi4_2_api.id, createdById: 'user-admin' },
+      
+      // Sprint 3 依赖
+      { workItemId: wi5_debug.id, dependsOnId: wi5_2_api.id, createdById: 'user-admin' },
+      { workItemId: wi6_1_debug.id, dependsOnId: wi6_1_api.id, createdById: 'user-admin' },
+      { workItemId: wi6_2_debug.id, dependsOnId: wi6_2_api.id, createdById: 'user-admin' },
+      { workItemId: wi7_1_debug.id, dependsOnId: wi7_1_api.id, createdById: 'user-admin' },
+      { workItemId: wi8_1_debug.id, dependsOnId: wi8_1_api.id, createdById: 'user-admin' },
     ],
   })
 
   console.log(`  已创建项目: ${project.name}`)
   console.log(`  已关联 2 个产品（小康App、标签平台）`)
-  console.log(`  已添加 ${6} 个成员`)
-  console.log(`  已创建 ${sprints.length} 个迭代`)
-  console.log(`  已创建 ${requirements.length + 1} 个需求`)
-  console.log(`  已创建 ${tasks.length + 3} 个任务`)
-  console.log(`  已创建 9 个工作项（标签管理功能）`)
-  console.log(`  已同步小康App的 2 个需求到项目`)
+  console.log(`  已添加 6 个成员`)
+  console.log(`  已创建 3 个迭代`)
+  console.log(`  - Sprint 1: 1 个需求, 2 个任务`)
+  console.log(`  - Sprint 2: 3 个需求, 6 个任务, 12 个工作项`)
+  console.log(`  - Sprint 3: 4 个需求 (智能规划导入), 8 个任务, 16 个工作项`)
+  console.log(`  已创建 10 个工作项依赖关系`)
 
   return project
 }

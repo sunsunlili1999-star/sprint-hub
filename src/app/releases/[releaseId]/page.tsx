@@ -38,7 +38,6 @@ import {
   FileTextOutlined,
   HistoryOutlined,
   ThunderboltOutlined,
-  RobotOutlined,
   LineChartOutlined,
   AlertOutlined,
   CheckOutlined,
@@ -56,6 +55,7 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import "dayjs/locale/zh-cn"
 import { useBreadcrumb } from "@/components/layout/main-layout"
+import PilotIcon from "@/components/ui/PilotIcon"
 
 dayjs.extend(relativeTime)
 dayjs.locale("zh-cn")
@@ -590,7 +590,7 @@ export default function ReleaseDetailPage({ params }: PageProps) {
         {/* AI 风险分析 */}
         <Card style={{ borderRadius: 12 }}>
           <Title level={5} style={{ margin: 0, marginBottom: 16 }}>
-            <RobotOutlined style={{ marginRight: 8, color: "#7c7cff" }} />
+            <PilotIcon style={{ marginRight: 8, fontSize: 16 }} />
             AI 风险分析
             {release.aiRiskScore && (
               <Tag style={{ marginLeft: 8, background: release.aiRiskScore > 50 ? "#fef2f2" : "#fffbeb", color: release.aiRiskScore > 50 ? "#ef4444" : "#f59e0b", border: "none" }}>
@@ -648,7 +648,7 @@ export default function ReleaseDetailPage({ params }: PageProps) {
                 <div style={{ marginTop: 4 }}>
                   <Space size={4}>
                     <Avatar size={18} style={{ background: log.createdBy.name === "小派" ? "linear-gradient(135deg, #7c7cff 0%, #22d3ee 100%)" : "#c4b5fd" }}>
-                      {log.createdBy.name === "小派" ? <RobotOutlined style={{ fontSize: 10 }} /> : log.createdBy.name?.[0]}
+                      {log.createdBy.name === "小派" ? <PilotIcon style={{ fontSize: 10 }} /> : log.createdBy.name?.[0]}
                     </Avatar>
                     <Text type="secondary" style={{ fontSize: 12 }}>{log.createdBy.name}</Text>
                   </Space>

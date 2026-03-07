@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, createContext, useContext, useCallback } from "react"
+import React, { useState, createContext, useContext, useCallback, useRef, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
@@ -34,9 +34,9 @@ import {
   CaretDownOutlined,
   StarOutlined,
   StarFilled,
-  RobotOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons"
+import PilotIcon from "@/components/ui/PilotIcon"
 import { AISidebar } from "@/components/ai/AISidebar"
 import { SmartPlanningModal } from "@/components/ai/SmartPlanningModal"
 
@@ -283,7 +283,7 @@ function CustomBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
 const menuItems: MenuProps["items"] = [
   {
     key: "/",
-    icon: <RobotOutlined />,
+    icon: <PilotIcon />,
     label: "AI 工作台",
   },
   {
@@ -377,6 +377,64 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const [hasUnread, setHasUnread] = useState(true) // 是否有未读消息
   const [showPlanningModal, setShowPlanningModal] = useState(false)
   const { token } = theme.useToken()
+
+  // 悬浮按钮拖动相关状态
+  const [pilotPosition, setPilotPosition] = useState({ x: 12, y: 12 }) // 右下角位置（相对于右下角的偏移）
+  const [isDragging, setIsDragging] = useState(false)
+  const dragRef = useRef<HTMLDivElement>(null)
+  const dragStartPos = useRef({ x: 0, y: 0 })
+  const dragStartOffset = useRef({ x: 0, y: 0 })
+  const hasMoved = useRef(false) // 是否发生了实际移动
+
+  // 拖动事件处理
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return
+      
+      const deltaX = dragStartPos.current.x - e.clientX
+      const deltaY = dragStartPos.current.y - e.clientY
+      
+      // 检测是否有明显移动（超过5px才算拖动）
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        hasMoved.current = true
+      }
+      
+      const newX = Math.max(0, Math.min(window.innerWidth - 160, dragStartOffset.current.x + deltaX))
+      const newY = Math.max(0, Math.min(window.innerHeight - 160, dragStartOffset.current.y + deltaY))
+      
+      setPilotPosition({ x: newX, y: newY })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      // 如果没有移动，则触发点击
+      if (!hasMoved.current) {
+        handleOpenAISidebar()
+      }
+      // 延迟重置，避免影响判断
+      setTimeout(() => {
+        hasMoved.current = false
+      }, 50)
+    }
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging])
+
+  const handlePilotMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+    hasMoved.current = false
+    dragStartPos.current = { x: e.clientX, y: e.clientY }
+    dragStartOffset.current = { ...pilotPosition }
+  }
 
   // 登录页面不使用 MainLayout，直接渲染内容
   if (pathname === "/login") {
@@ -745,7 +803,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </>
         )}
 
-        {/* 右下角悬浮机器人按钮 */}
+        {/* 右下角悬浮机器人按钮 - 可拖动 */}
         {!showAISidebar && (
           <>
             <style jsx>{`
@@ -759,23 +817,25 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               }
             `}</style>
             <div
-              onClick={handleOpenAISidebar}
+              ref={dragRef}
+              onMouseDown={handlePilotMouseDown}
               style={{
                 position: "fixed",
-                right: 12,
-                bottom: 12,
+                right: pilotPosition.x,
+                bottom: pilotPosition.y,
                 width: 160,
                 height: 160,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "pointer",
+                cursor: isDragging ? "grabbing" : "grab",
                 zIndex: 100,
-                animation: "float 3s ease-in-out infinite",
+                animation: isDragging ? "none" : "float 3s ease-in-out infinite",
+                userSelect: "none",
               }}
             >
               {/* 脉冲光环效果 - 仅未读时显示 */}
-              {hasUnread && (
+              {hasUnread && !isDragging && (
                 <div
                   style={{
                     position: "absolute",
@@ -790,23 +850,18 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               {/* 机器人图片 */}
               <img
                 src="/pilot.png"
-                alt="AI 助手"
+                alt="AI 助手 - 拖动可移动位置"
+                draggable={false}
                 style={{
                   width: 160,
                   height: 160,
                   objectFit: "contain",
-                  transition: "transform 0.3s",
+                  transition: isDragging ? "none" : "transform 0.3s",
                   position: "relative",
                   zIndex: 1,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.1)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)"
+                  pointerEvents: "none",
                 }}
               />
-
             </div>
           </>
         )}

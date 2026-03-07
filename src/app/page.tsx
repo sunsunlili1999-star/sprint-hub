@@ -18,7 +18,6 @@ import {
   Checkbox,
 } from "antd"
 import {
-  RobotOutlined,
   RocketOutlined,
   FileTextOutlined,
   TeamOutlined,
@@ -47,6 +46,7 @@ import {
   DownOutlined,
   RightOutlined,
 } from "@ant-design/icons"
+import PilotIcon from "@/components/ui/PilotIcon"
 import { useBreadcrumb } from "@/components/layout/main-layout"
 
 const { Title, Text, Paragraph } = Typography
@@ -373,7 +373,7 @@ export default function DashboardPage() {
           <Card
             title={
               <Space>
-                <RobotOutlined style={{ color: "#7c7cff" }} />
+                <PilotIcon style={{ fontSize: 16 }} />
                 <span>AI 项目跟踪</span>
                 <Tag color="#7c7cff" style={{ margin: 0 }}>实时监控</Tag>
               </Space>
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                                 >
                                   {release.riskLevel === "high" ? "高风险" : release.riskLevel === "medium" ? "中风险" : "低风险"}
                                 </Tag>
-                                <Tag icon={<RobotOutlined />} style={{ margin: 0, background: "#f5f3ff", color: "#7c7cff", border: "none" }}>
+                                <Tag icon={<PilotIcon style={{ fontSize: 12 }} />} style={{ margin: 0, background: "#f5f3ff", color: "#7c7cff", border: "none" }}>
                                   风险评分 {release.riskScore}
                                 </Tag>
                               </Space>
@@ -767,7 +767,7 @@ export default function DashboardPage() {
                         flexShrink: 0,
                       }}
                     >
-                      {item.type === "ai" ? <RobotOutlined style={{ fontSize: 12 }} /> : item.user[0]}
+                      {item.type === "ai" ? <PilotIcon style={{ fontSize: 12 }} /> : item.user[0]}
                     </Avatar>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13 }}>

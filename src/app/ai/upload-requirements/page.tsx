@@ -28,7 +28,6 @@ import {
   InboxOutlined,
   FileTextOutlined,
   CheckCircleOutlined,
-  RobotOutlined,
   ThunderboltOutlined,
   ArrowLeftOutlined,
   ArrowRightOutlined,
@@ -43,6 +42,7 @@ import {
   WarningOutlined,
 } from "@ant-design/icons"
 import dayjs from "dayjs"
+import PilotIcon from "@/components/ui/PilotIcon"
 
 const { Title, Text, Paragraph } = Typography
 const { Dragger } = Upload
@@ -308,7 +308,7 @@ export default function UploadRequirementsPage() {
                   justifyContent: "center",
                 }}
               >
-                <RobotOutlined style={{ fontSize: 24, color: "#fff" }} />
+                <PilotIcon style={{ fontSize: 24 }} />
               </div>
               <div style={{ flex: 1 }}>
                 <Text strong style={{ fontSize: 16 }}>AI 解析完成</Text>

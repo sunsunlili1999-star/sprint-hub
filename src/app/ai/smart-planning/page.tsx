@@ -27,7 +27,6 @@ import {
   TeamOutlined,
   CalendarOutlined,
   RocketOutlined,
-  RobotOutlined,
   CheckCircleOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -45,6 +44,7 @@ import {
 import dayjs from "dayjs"
 import type { Dayjs } from "dayjs"
 import { useBreadcrumb } from "@/components/layout/main-layout"
+import PilotIcon from "@/components/ui/PilotIcon"
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -479,7 +479,7 @@ export default function SmartPlanningPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                     <Avatar
                       style={{ background: "linear-gradient(135deg, #7c7cff 0%, #22d3ee 100%)" }}
-                      icon={<RobotOutlined />}
+                      icon={<PilotIcon />}
                     />
                     <div>
                       <Text strong>小派正在分析需求文档...</Text>

@@ -12,7 +12,6 @@ import {
   Tooltip,
 } from "antd"
 import {
-  RobotOutlined,
   SendOutlined,
   CloseOutlined,
   RocketOutlined,

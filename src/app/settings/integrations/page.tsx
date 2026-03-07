@@ -20,7 +20,6 @@ import {
   Checkbox,
 } from "antd"
 import {
-  RobotOutlined,
   DingdingOutlined,
   MailOutlined,
   ApiOutlined,
@@ -35,6 +34,7 @@ import {
   BellOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons"
+import PilotIcon from "@/components/ui/PilotIcon"
 import dayjs from "dayjs"
 import { useBreadcrumb } from "@/components/layout/main-layout"
 
@@ -177,7 +177,7 @@ export default function IntegrationsPage() {
             key: "openclaw",
             label: (
               <span>
-                <RobotOutlined />
+                <PilotIcon />
                 OpenClaw 配置
               </span>
             ),
@@ -203,11 +203,11 @@ export default function IntegrationsPage() {
                   }
                   type="info"
                   showIcon
-                  icon={<RobotOutlined />}
+                  icon={<PilotIcon />}
                 />
 
                 {/* 一键部署说明 */}
-                <Card
+                {/* <Card
                   title={
                     <Space>
                       <ThunderboltOutlined style={{ color: "#10b981" }} />
@@ -252,13 +252,13 @@ export default function IntegrationsPage() {
                       查看完整文档 →
                     </Button>
                   </Space>
-                </Card>
+                </Card> */}
 
                 {/* OpenClaw 配置卡片 */}
                 <Card
                   title={
                     <Space>
-                      <RobotOutlined style={{ color: "#7c7cff" }} />
+                      <PilotIcon style={{ color: "#7c7cff" }} />
                       <span>OpenClaw 连接</span>
                       <Tag color={openclawConfig.enabled ? "success" : "default"}>
                         {openclawConfig.enabled ? "已启用" : "未启用"}

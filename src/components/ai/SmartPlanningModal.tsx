@@ -7,7 +7,6 @@ import {
   CheckCircleOutlined,
   SettingOutlined,
   RocketOutlined,
-  RobotOutlined,
   EyeOutlined,
   AppstoreOutlined,
   ProjectOutlined,
@@ -15,6 +14,7 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons"
 import { useRouter } from "next/navigation"
+import PilotIcon from "@/components/ui/PilotIcon"
 
 const { Text } = Typography
 
@@ -215,7 +215,7 @@ export function SmartPlanningModal({ open, onClose }: SmartPlanningModalProps) {
                 justifyContent: "center",
               }}
             >
-              <RobotOutlined style={{ fontSize: 24, color: "#fff" }} />
+              <PilotIcon style={{ fontSize: 24 }} />
             </div>
             <div>
               <div style={{ fontSize: 22, fontWeight: 600, color: "#fff" }}>AI 智能规划</div>
@@ -500,7 +500,7 @@ export function SmartPlanningModal({ open, onClose }: SmartPlanningModalProps) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <RobotOutlined style={{ color: "#7c7cff" }} />
+                  <PilotIcon style={{ fontSize: 14 }} />
                   <Text type="secondary" style={{ fontSize: 13 }}>
                     即将为 <Text strong>{selectedProductData?.name}</Text> / 
                     <Text strong> {selectedProjectData?.name}</Text> 开始智能规划

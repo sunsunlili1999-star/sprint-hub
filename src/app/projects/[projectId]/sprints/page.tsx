@@ -42,13 +42,13 @@ import {
   WarningOutlined,
   ExclamationCircleOutlined,
   StopOutlined,
-  RobotOutlined,
   TeamOutlined,
   FileTextOutlined,
   ThunderboltOutlined,
   ArrowRightOutlined,
 } from "@ant-design/icons"
 import dayjs from "dayjs"
+import PilotIcon from "@/components/ui/PilotIcon"
 import { ListPageLayout, type SidebarItem } from "@/components/ui/ListPageLayout"
 import { sprintApi, type Sprint, type SprintWorkItem } from "@/lib/api"
 
@@ -630,7 +630,7 @@ export default function ProjectSprintsPage() {
                 justifyContent: "center",
                 flexShrink: 0,
               }}>
-                <RobotOutlined style={{ color: riskInfo.color, fontSize: 14 }} />
+                <PilotIcon style={{ fontSize: 14 }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
