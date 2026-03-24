@@ -327,17 +327,8 @@ export default function TodosPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="w-6 h-6" />
-            智能待办
-          </h1>
-          <p className="text-muted-foreground">
-            今日 {today} · 共 {todayTasks.length} 项待办
-          </p>
-        </div>
+      {/* 操作按钮 */}
+      <div className="flex items-center justify-end">
         <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
           <Sparkles className="w-4 h-4 mr-2" />
           生成今日日报

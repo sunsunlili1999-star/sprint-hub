@@ -144,27 +144,16 @@ export default function MessagesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Bell className="w-6 h-6" />
-            消息中心
-          </h1>
-          <p className="text-muted-foreground">
-            共 {messages.length} 条消息，{unreadCount} 条未读
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={markAllAsRead}>
-            <CheckCheck className="w-4 h-4 mr-2" />
-            全部标为已读
-          </Button>
-          <Button variant="outline">
-            <Settings className="w-4 h-4 mr-2" />
-            通知设置
-          </Button>
-        </div>
+      {/* 操作按钮 */}
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" onClick={markAllAsRead}>
+          <CheckCheck className="w-4 h-4 mr-2" />
+          全部标为已读
+        </Button>
+        <Button variant="outline">
+          <Settings className="w-4 h-4 mr-2" />
+          通知设置
+        </Button>
       </div>
 
       {/* 统计卡片 */}

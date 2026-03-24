@@ -51,12 +51,12 @@ export function AppLoading() {
         pointerEvents: fadeOut ? "none" : "auto",
       }}
     >
-      {/* 背景动画圆圈 */}
+      {/* 背景动画圆圈 - 缩小 */}
       <div
         style={{
           position: "absolute",
-          width: 400,
-          height: 400,
+          width: 250,
+          height: 250,
           borderRadius: "50%",
           background: "radial-gradient(circle, rgba(124,124,255,0.15) 0%, transparent 70%)",
           animation: "pulse 3s ease-in-out infinite",
@@ -65,21 +65,21 @@ export function AppLoading() {
       <div
         style={{
           position: "absolute",
-          width: 300,
-          height: 300,
+          width: 180,
+          height: 180,
           borderRadius: "50%",
           background: "radial-gradient(circle, rgba(34,211,238,0.1) 0%, transparent 70%)",
           animation: "pulse 3s ease-in-out infinite 0.5s",
         }}
       />
 
-      {/* Logo 容器 */}
+      {/* Logo 容器 - 缩小 */}
       <div
         style={{
           position: "relative",
           marginBottom: 40,
-          width: 200,
-          height: 200,
+          width: 120,
+          height: 120,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -94,7 +94,7 @@ export function AppLoading() {
             right: 0,
             bottom: 0,
             borderRadius: "50%",
-            border: "3px solid transparent",
+            border: "2px solid transparent",
             borderTopColor: "#7c7cff",
             borderRightColor: "#22d3ee",
             animation: "spin 1.5s linear infinite",
@@ -103,30 +103,33 @@ export function AppLoading() {
         <div
           style={{
             position: "absolute",
-            top: 15,
-            left: 15,
-            right: 15,
-            bottom: 15,
+            top: 10,
+            left: 10,
+            right: 10,
+            bottom: 10,
             borderRadius: "50%",
-            border: "3px solid transparent",
+            border: "2px solid transparent",
             borderBottomColor: "#22d3ee",
             borderLeftColor: "#7c7cff",
             animation: "spin 2s linear infinite reverse",
           }}
         />
 
-        {/* Logo - AI 阅读图标 */}
-        <img
-          src="/aireading.png"
-          alt="加载中"
-          className="loading-float-img"
+        {/* Logo 图标 - 圆角矩形 + P */}
+        <div
           style={{
-            width: 220,
-            height: 220,
-            objectFit: "contain",
-            filter: "drop-shadow(0 0 24px rgba(124,124,255,0.4))",
+            width: 64,
+            height: 64,
+            borderRadius: 16,
+            background: "linear-gradient(135deg, #7c7cff 0%, #22d3ee 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 8px 24px rgba(124, 124, 255, 0.4)",
           }}
-        />
+        >
+          <span style={{ fontSize: 32, color: "#fff", fontWeight: 700 }}>P</span>
+        </div>
       </div>
 
       {/* 品牌名称 */}
@@ -244,22 +247,6 @@ export function AppLoading() {
             transform: scale(1.1);
             opacity: 0.8;
           }
-        }
-
-        @keyframes logoFloat {
-          0%,
-          100% {
-            transform: translateY(6px) translateZ(0);
-          }
-          50% {
-            transform: translateY(-6px) translateZ(0);
-          }
-        }
-
-        .loading-float-img {
-          animation: logoFloat 2.5s ease-in-out infinite;
-          will-change: transform;
-          backface-visibility: hidden;
         }
 
         @keyframes dotBounce {
