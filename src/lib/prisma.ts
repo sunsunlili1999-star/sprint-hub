@@ -10,8 +10,12 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL
 
+  // 在构建阶段，DATABASE_URL 可能不存在，返回不带 adapter 的基础 PrismaClient
   if (!connectionString) {
-    throw new Error('DATABASE_URL is not defined')
+    console.warn('DATABASE_URL is not defined, using Prisma Client without connection pool')
+    return new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    })
   }
 
   const pool = globalForPrisma.pool ?? new Pool({ connectionString })
