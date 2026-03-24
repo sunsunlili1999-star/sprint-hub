@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx prisma:*)",
       "Bash(npm run:*)",
-      "Bash(openssl rand:*)"
+      "Bash(openssl rand:*)",
+      "Bash(npm list:*)"
     ]
   }
 }
