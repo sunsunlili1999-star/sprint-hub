@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   Typography,
@@ -208,7 +208,7 @@ const getPriorityColor = (priority: string) => {
 
 // ==================== 组件 ====================
 
-export default function SmartPlanningPage() {
+function SmartPlanningContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setBreadcrumbs } = useBreadcrumb()
@@ -1041,5 +1041,13 @@ export default function SmartPlanningPage() {
         )}
       </Modal>
     </div>
+  )
+}
+
+export default function SmartPlanningPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "24px 32px", textAlign: "center" }}><Spin size="large" /></div>}>
+      <SmartPlanningContent />
+    </Suspense>
   )
 }
