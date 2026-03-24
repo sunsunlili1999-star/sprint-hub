@@ -43,30 +43,35 @@ export const authOptions: NextAuthOptions = {
         password: { label: "密码", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("请输入邮箱和密码")
-        }
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("请输入邮箱和密码")
+          }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          })
 
-        if (!user) {
-          throw new Error("用户不存在")
-        }
+          if (!user) {
+            throw new Error("用户不存在")
+          }
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
 
-        if (!isPasswordValid) {
-          throw new Error("密码错误")
-        }
+          if (!isPasswordValid) {
+            throw new Error("密码错误")
+          }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            avatar: user.avatar,
+            role: user.role,
+          }
+        } catch (error) {
+          console.error("Auth error:", error)
+          throw error
         }
       },
     }),
